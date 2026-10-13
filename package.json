@@ -1,0 +1,21 @@
+{
+  "name": "guiltycodes",
+  "version": "1.0.0",
+  "description": "Guilty Codes: cheat codes for the Guilty Gear PS2 games",
+  "scripts": {
+    "build": "node build.mjs",
+    "deploy": "node build.mjs && wrangler pages deploy dist --project-name guiltycodes --branch main"
+  },
+  "type": "module",
+  "dependencies": {
+    "@fontsource/anton": "^5.3.0",
+    "@uppercut-labs/dreamcast-backgrounds": "^0.1.0",
+    "esbuild": "^0.28.2",
+    "marked": "^18.1.1",
+    "yaml": "^2.9.1"
+  },
+  "private": true,
+  "devDependencies": {
+    "simple-icons": "^16.35.0"
+  }
+}
