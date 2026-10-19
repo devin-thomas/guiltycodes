@@ -1,0 +1,26 @@
+gametitle=Guilty Gear XX (NTSC-J) [SLPS-25184] (4B6DDB6B)
+comment=Unlock codes by retro-graphics-research.
+comment=Each [section] is a separate cheat: enable only the ones you want.
+
+[Unlock Robo-Ky, Kliff, Justice and GG mode]
+author=retro-graphics-research
+description=Robo-Ky, Kliff and Justice on the wheel (+0xB8 ... +0xBA) and the GG-MODE option (+0xBB).
+patch=1,EE,202E4C40,extended,01010101
+
+[Unlock all EX characters]
+author=retro-graphics-research
+description=EX flags +0xBC ... +0xCF (hold L2 while picking).
+patch=1,EE,402E4C44,extended,00050001
+patch=1,EE,01010101,extended,00000000
+
+[Unlock all SP colours]
+author=retro-graphics-research
+description=SP flags +0x8A ... +0xB6, u16 each (hold L1 while picking).
+patch=1,EE,102E4C12,extended,00000001
+patch=1,EE,402E4C14,extended,000B0001
+patch=1,EE,00010001,extended,00000000
+
+[Max play time]
+author=retro-graphics-research
+description=Play time 60000 minutes (+0x70).
+patch=1,EE,202E4BF8,extended,0000EA60

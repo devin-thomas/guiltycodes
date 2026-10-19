@@ -275,3 +275,6 @@ a.dlbtn:visited { color: #fff; }
 @media print { #bg, #tint, .side, .topnav, .platnav { display: none; } body { background: #fff; color: #000; } }
 table.identstrip td { background: var(--row) !important; font-size: 12px; white-space: nowrap; }
 table.identstrip th { position: static; }
+
+/* downloads table: serial and CRC are in the file name on phones */
+@media (max-width: 600px) { .grid .wide { display: none; } }

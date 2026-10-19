@@ -1,0 +1,30 @@
+# Publishes the committed pnach/ files as a GitHub release when a vYYYY.MM.DD tag is pushed.
+name: Release
+on:
+  push:
+    tags: ["v*"]
+permissions:
+  contents: write
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Zip the cheat files
+        run: |
+          ls pnach/*.pnach > /dev/null || { echo "pnach/ has no .pnach files"; exit 1; }
+          cd pnach && zip -X ../guiltycodes-pnach.zip *.pnach
+      - name: Create the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          {
+            echo "PCSX2 cheat files for the Guilty Gear PS2 games. Put one in PCSX2's \`cheats\` folder and turn on cheats."
+            echo
+            echo "| File | Game | Release | Serial | CRC | Codes |"
+            echo "|---|---|---|---|---|---|"
+            jq -r '.[] | "| \(.file) | \(.game) | \(.release) | \(.serial) | \(.crc) | \(.codes) |"' pnach/index.json
+            echo
+            echo "Every code with its test status: https://guiltycodes.pages.dev/downloads/"
+          } > notes.md
+          gh release create "$GITHUB_REF_NAME" --title "Guilty Codes $GITHUB_REF_NAME" --notes-file notes.md guiltycodes-pnach.zip pnach/*.pnach

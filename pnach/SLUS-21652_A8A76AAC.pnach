@@ -1,0 +1,253 @@
+gametitle=Guilty Gear XX Accent Core (NTSC-U) [SLUS-21652] (A8A76AAC)
+comment=Unlock codes by retro-graphics-research.
+comment=Each [section] is a separate cheat: enable only the ones you want.
+
+[Unlock all EX characters]
+author=retro-graphics-research
+description=CHARACTER: NORMAL / EX in the Start panel (23 characters).
+patch=1,EE,00321637,extended,00000001
+patch=1,EE,40321638,extended,00050001
+patch=1,EE,01010101,extended,00000000
+patch=1,EE,1032164C,extended,00000101
+
+[Unlock all gold and black colours]
+author=retro-graphics-research
+description=SLASH COLOR / RELOAD COLOR + Dust (R1) give gold / black (23 characters).
+patch=1,EE,40321600,extended,000B0001
+patch=1,EE,00010001,extended,00000000
+patch=1,EE,1032162C,extended,00000001
+
+[Max play time]
+author=retro-graphics-research
+description=Play time 60000 minutes; the play-time check grants the time-released unlocks (same write as Fullcodes' "Have All Characters' color", GameHacking.org 103881).
+patch=1,EE,203215E0,extended,0000EA60
+
+[Unlock EX Sol Badguy]
+author=retro-graphics-research
+description=EX Sol Badguy only.
+patch=1,EE,00321637,extended,00000001
+
+[Unlock EX Ky Kiske]
+author=retro-graphics-research
+description=EX Ky Kiske only.
+patch=1,EE,00321638,extended,00000001
+
+[Unlock EX May]
+author=retro-graphics-research
+description=EX May only.
+patch=1,EE,00321639,extended,00000001
+
+[Unlock EX Millia Rage]
+author=retro-graphics-research
+description=EX Millia Rage only.
+patch=1,EE,0032163A,extended,00000001
+
+[Unlock EX Axl Low]
+author=retro-graphics-research
+description=EX Axl Low only.
+patch=1,EE,0032163B,extended,00000001
+
+[Unlock EX Potemkin]
+author=retro-graphics-research
+description=EX Potemkin only.
+patch=1,EE,0032163C,extended,00000001
+
+[Unlock EX Chipp Zanuff]
+author=retro-graphics-research
+description=EX Chipp Zanuff only.
+patch=1,EE,0032163D,extended,00000001
+
+[Unlock EX Eddie]
+author=retro-graphics-research
+description=EX Eddie only.
+patch=1,EE,0032163E,extended,00000001
+
+[Unlock EX Baiken]
+author=retro-graphics-research
+description=EX Baiken only.
+patch=1,EE,0032163F,extended,00000001
+
+[Unlock EX Faust]
+author=retro-graphics-research
+description=EX Faust only.
+patch=1,EE,00321640,extended,00000001
+
+[Unlock EX Testament]
+author=retro-graphics-research
+description=EX Testament only.
+patch=1,EE,00321641,extended,00000001
+
+[Unlock EX Jam Kuradoberi]
+author=retro-graphics-research
+description=EX Jam Kuradoberi only.
+patch=1,EE,00321642,extended,00000001
+
+[Unlock EX Anji Mito]
+author=retro-graphics-research
+description=EX Anji Mito only.
+patch=1,EE,00321643,extended,00000001
+
+[Unlock EX Johnny]
+author=retro-graphics-research
+description=EX Johnny only.
+patch=1,EE,00321644,extended,00000001
+
+[Unlock EX Venom]
+author=retro-graphics-research
+description=EX Venom only.
+patch=1,EE,00321645,extended,00000001
+
+[Unlock EX Dizzy]
+author=retro-graphics-research
+description=EX Dizzy only.
+patch=1,EE,00321646,extended,00000001
+
+[Unlock EX Slayer]
+author=retro-graphics-research
+description=EX Slayer only.
+patch=1,EE,00321647,extended,00000001
+
+[Unlock EX I-No]
+author=retro-graphics-research
+description=EX I-No only.
+patch=1,EE,00321648,extended,00000001
+
+[Unlock EX Zappa]
+author=retro-graphics-research
+description=EX Zappa only.
+patch=1,EE,00321649,extended,00000001
+
+[Unlock EX Bridget]
+author=retro-graphics-research
+description=EX Bridget only.
+patch=1,EE,0032164A,extended,00000001
+
+[Unlock EX Robo-Ky]
+author=retro-graphics-research
+description=EX Robo-Ky only.
+patch=1,EE,0032164B,extended,00000001
+
+[Unlock EX A.B.A]
+author=retro-graphics-research
+description=EX A.B.A only.
+patch=1,EE,0032164C,extended,00000001
+
+[Unlock EX Order-Sol]
+author=retro-graphics-research
+description=EX Order-Sol only.
+patch=1,EE,0032164D,extended,00000001
+
+[Unlock gold/black Sol Badguy]
+author=retro-graphics-research
+description=Gold and black Sol Badguy only.
+patch=1,EE,10321600,extended,00000001
+
+[Unlock gold/black Ky Kiske]
+author=retro-graphics-research
+description=Gold and black Ky Kiske only.
+patch=1,EE,10321602,extended,00000001
+
+[Unlock gold/black May]
+author=retro-graphics-research
+description=Gold and black May only.
+patch=1,EE,10321604,extended,00000001
+
+[Unlock gold/black Millia Rage]
+author=retro-graphics-research
+description=Gold and black Millia Rage only.
+patch=1,EE,10321606,extended,00000001
+
+[Unlock gold/black Axl Low]
+author=retro-graphics-research
+description=Gold and black Axl Low only.
+patch=1,EE,10321608,extended,00000001
+
+[Unlock gold/black Potemkin]
+author=retro-graphics-research
+description=Gold and black Potemkin only.
+patch=1,EE,1032160A,extended,00000001
+
+[Unlock gold/black Chipp Zanuff]
+author=retro-graphics-research
+description=Gold and black Chipp Zanuff only.
+patch=1,EE,1032160C,extended,00000001
+
+[Unlock gold/black Eddie]
+author=retro-graphics-research
+description=Gold and black Eddie only.
+patch=1,EE,1032160E,extended,00000001
+
+[Unlock gold/black Baiken]
+author=retro-graphics-research
+description=Gold and black Baiken only.
+patch=1,EE,10321610,extended,00000001
+
+[Unlock gold/black Faust]
+author=retro-graphics-research
+description=Gold and black Faust only.
+patch=1,EE,10321612,extended,00000001
+
+[Unlock gold/black Testament]
+author=retro-graphics-research
+description=Gold and black Testament only.
+patch=1,EE,10321614,extended,00000001
+
+[Unlock gold/black Jam Kuradoberi]
+author=retro-graphics-research
+description=Gold and black Jam Kuradoberi only.
+patch=1,EE,10321616,extended,00000001
+
+[Unlock gold/black Anji Mito]
+author=retro-graphics-research
+description=Gold and black Anji Mito only.
+patch=1,EE,10321618,extended,00000001
+
+[Unlock gold/black Johnny]
+author=retro-graphics-research
+description=Gold and black Johnny only.
+patch=1,EE,1032161A,extended,00000001
+
+[Unlock gold/black Venom]
+author=retro-graphics-research
+description=Gold and black Venom only.
+patch=1,EE,1032161C,extended,00000001
+
+[Unlock gold/black Dizzy]
+author=retro-graphics-research
+description=Gold and black Dizzy only.
+patch=1,EE,1032161E,extended,00000001
+
+[Unlock gold/black Slayer]
+author=retro-graphics-research
+description=Gold and black Slayer only.
+patch=1,EE,10321620,extended,00000001
+
+[Unlock gold/black I-No]
+author=retro-graphics-research
+description=Gold and black I-No only.
+patch=1,EE,10321622,extended,00000001
+
+[Unlock gold/black Zappa]
+author=retro-graphics-research
+description=Gold and black Zappa only.
+patch=1,EE,10321624,extended,00000001
+
+[Unlock gold/black Bridget]
+author=retro-graphics-research
+description=Gold and black Bridget only.
+patch=1,EE,10321626,extended,00000001
+
+[Unlock gold/black Robo-Ky]
+author=retro-graphics-research
+description=Gold and black Robo-Ky only.
+patch=1,EE,10321628,extended,00000001
+
+[Unlock gold/black A.B.A]
+author=retro-graphics-research
+description=Gold and black A.B.A only.
+patch=1,EE,1032162A,extended,00000001
+
+[Unlock gold/black Order-Sol]
+author=retro-graphics-research
+description=Gold and black Order-Sol only.
+patch=1,EE,1032162C,extended,00000001

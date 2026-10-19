@@ -1,0 +1,265 @@
+gametitle=Guilty Gear X2 (NTSC-U) [SLUS-20436] (913FBFB8)
+comment=Unlock codes found and verified by retro-graphics-research.
+comment=Each [section] is a separate cheat: enable only the ones you want.
+
+[Unlock everything (characters, EX, SP, GG mode)]
+author=retro-graphics-research
+description=Robo-Ky, Kliff, Justice, the GG-MODE option, all 20 EX characters and the SP colour for all 23.
+patch=1,EE,102E0DF2,extended,00000001
+patch=1,EE,402E0DF4,extended,000B0001
+patch=1,EE,00010001,extended,00000000
+patch=1,EE,402E0E20,extended,00060001
+patch=1,EE,01010101,extended,00000000
+
+[Unlock Robo-Ky]
+author=retro-graphics-research
+description=Robo-Ky on the character wheel.
+patch=1,EE,002E0E20,extended,00000001
+
+[Unlock Kliff Undersn]
+author=retro-graphics-research
+description=Kliff on the character wheel.
+patch=1,EE,002E0E21,extended,00000001
+
+[Unlock Justice]
+author=retro-graphics-research
+description=Justice on the character wheel.
+patch=1,EE,002E0E22,extended,00000001
+
+[Unlock GG mode]
+author=retro-graphics-research
+description=OPTIONS > GAME OPTIONS gains GG-MODE (OFF/ON).
+patch=1,EE,002E0E23,extended,00000001
+
+[Unlock all EX characters]
+author=retro-graphics-research
+description=Hold L2 while picking to play the EX version (ids 1-20).
+patch=1,EE,402E0E24,extended,00050001
+patch=1,EE,01010101,extended,00000000
+
+[Unlock EX Sol Badguy]
+author=retro-graphics-research
+description=EX Sol Badguy only (hold L2 while picking).
+patch=1,EE,002E0E24,extended,00000001
+
+[Unlock EX Ky Kiske]
+author=retro-graphics-research
+description=EX Ky Kiske only (hold L2 while picking).
+patch=1,EE,002E0E25,extended,00000001
+
+[Unlock EX May]
+author=retro-graphics-research
+description=EX May only (hold L2 while picking).
+patch=1,EE,002E0E26,extended,00000001
+
+[Unlock EX Millia Rage]
+author=retro-graphics-research
+description=EX Millia Rage only (hold L2 while picking).
+patch=1,EE,002E0E27,extended,00000001
+
+[Unlock EX Axl Low]
+author=retro-graphics-research
+description=EX Axl Low only (hold L2 while picking).
+patch=1,EE,002E0E28,extended,00000001
+
+[Unlock EX Potemkin]
+author=retro-graphics-research
+description=EX Potemkin only (hold L2 while picking).
+patch=1,EE,002E0E29,extended,00000001
+
+[Unlock EX Chipp Zanuff]
+author=retro-graphics-research
+description=EX Chipp Zanuff only (hold L2 while picking).
+patch=1,EE,002E0E2A,extended,00000001
+
+[Unlock EX Eddie]
+author=retro-graphics-research
+description=EX Eddie only (hold L2 while picking).
+patch=1,EE,002E0E2B,extended,00000001
+
+[Unlock EX Baiken]
+author=retro-graphics-research
+description=EX Baiken only (hold L2 while picking).
+patch=1,EE,002E0E2C,extended,00000001
+
+[Unlock EX Faust]
+author=retro-graphics-research
+description=EX Faust only (hold L2 while picking).
+patch=1,EE,002E0E2D,extended,00000001
+
+[Unlock EX Testament]
+author=retro-graphics-research
+description=EX Testament only (hold L2 while picking).
+patch=1,EE,002E0E2E,extended,00000001
+
+[Unlock EX Jam Kuradoberi]
+author=retro-graphics-research
+description=EX Jam Kuradoberi only (hold L2 while picking).
+patch=1,EE,002E0E2F,extended,00000001
+
+[Unlock EX Anji Mito]
+author=retro-graphics-research
+description=EX Anji Mito only (hold L2 while picking).
+patch=1,EE,002E0E30,extended,00000001
+
+[Unlock EX Johnny]
+author=retro-graphics-research
+description=EX Johnny only (hold L2 while picking).
+patch=1,EE,002E0E31,extended,00000001
+
+[Unlock EX Venom]
+author=retro-graphics-research
+description=EX Venom only (hold L2 while picking).
+patch=1,EE,002E0E32,extended,00000001
+
+[Unlock EX Dizzy]
+author=retro-graphics-research
+description=EX Dizzy only (hold L2 while picking).
+patch=1,EE,002E0E33,extended,00000001
+
+[Unlock EX Slayer]
+author=retro-graphics-research
+description=EX Slayer only (hold L2 while picking).
+patch=1,EE,002E0E34,extended,00000001
+
+[Unlock EX I-No]
+author=retro-graphics-research
+description=EX I-No only (hold L2 while picking).
+patch=1,EE,002E0E35,extended,00000001
+
+[Unlock EX Zappa]
+author=retro-graphics-research
+description=EX Zappa only (hold L2 while picking).
+patch=1,EE,002E0E36,extended,00000001
+
+[Unlock EX Bridget]
+author=retro-graphics-research
+description=EX Bridget only (hold L2 while picking).
+patch=1,EE,002E0E37,extended,00000001
+
+[Unlock all SP colours]
+author=retro-graphics-research
+description=Hold L1 while picking for the SP (gold) colour, all 23 characters.
+patch=1,EE,102E0DF2,extended,00000001
+patch=1,EE,402E0DF4,extended,000B0001
+patch=1,EE,00010001,extended,00000000
+
+[Unlock SP Sol Badguy]
+author=retro-graphics-research
+description=SP colour for Sol Badguy only (hold L1 while picking).
+patch=1,EE,102E0DF2,extended,00000001
+
+[Unlock SP Ky Kiske]
+author=retro-graphics-research
+description=SP colour for Ky Kiske only (hold L1 while picking).
+patch=1,EE,102E0DF4,extended,00000001
+
+[Unlock SP May]
+author=retro-graphics-research
+description=SP colour for May only (hold L1 while picking).
+patch=1,EE,102E0DF6,extended,00000001
+
+[Unlock SP Millia Rage]
+author=retro-graphics-research
+description=SP colour for Millia Rage only (hold L1 while picking).
+patch=1,EE,102E0DF8,extended,00000001
+
+[Unlock SP Axl Low]
+author=retro-graphics-research
+description=SP colour for Axl Low only (hold L1 while picking).
+patch=1,EE,102E0DFA,extended,00000001
+
+[Unlock SP Potemkin]
+author=retro-graphics-research
+description=SP colour for Potemkin only (hold L1 while picking).
+patch=1,EE,102E0DFC,extended,00000001
+
+[Unlock SP Chipp Zanuff]
+author=retro-graphics-research
+description=SP colour for Chipp Zanuff only (hold L1 while picking).
+patch=1,EE,102E0DFE,extended,00000001
+
+[Unlock SP Eddie]
+author=retro-graphics-research
+description=SP colour for Eddie only (hold L1 while picking).
+patch=1,EE,102E0E00,extended,00000001
+
+[Unlock SP Baiken]
+author=retro-graphics-research
+description=SP colour for Baiken only (hold L1 while picking).
+patch=1,EE,102E0E02,extended,00000001
+
+[Unlock SP Faust]
+author=retro-graphics-research
+description=SP colour for Faust only (hold L1 while picking).
+patch=1,EE,102E0E04,extended,00000001
+
+[Unlock SP Testament]
+author=retro-graphics-research
+description=SP colour for Testament only (hold L1 while picking).
+patch=1,EE,102E0E06,extended,00000001
+
+[Unlock SP Jam Kuradoberi]
+author=retro-graphics-research
+description=SP colour for Jam Kuradoberi only (hold L1 while picking).
+patch=1,EE,102E0E08,extended,00000001
+
+[Unlock SP Anji Mito]
+author=retro-graphics-research
+description=SP colour for Anji Mito only (hold L1 while picking).
+patch=1,EE,102E0E0A,extended,00000001
+
+[Unlock SP Johnny]
+author=retro-graphics-research
+description=SP colour for Johnny only (hold L1 while picking).
+patch=1,EE,102E0E0C,extended,00000001
+
+[Unlock SP Venom]
+author=retro-graphics-research
+description=SP colour for Venom only (hold L1 while picking).
+patch=1,EE,102E0E0E,extended,00000001
+
+[Unlock SP Dizzy]
+author=retro-graphics-research
+description=SP colour for Dizzy only (hold L1 while picking).
+patch=1,EE,102E0E10,extended,00000001
+
+[Unlock SP Slayer]
+author=retro-graphics-research
+description=SP colour for Slayer only (hold L1 while picking).
+patch=1,EE,102E0E12,extended,00000001
+
+[Unlock SP I-No]
+author=retro-graphics-research
+description=SP colour for I-No only (hold L1 while picking).
+patch=1,EE,102E0E14,extended,00000001
+
+[Unlock SP Zappa]
+author=retro-graphics-research
+description=SP colour for Zappa only (hold L1 while picking).
+patch=1,EE,102E0E16,extended,00000001
+
+[Unlock SP Bridget]
+author=retro-graphics-research
+description=SP colour for Bridget only (hold L1 while picking).
+patch=1,EE,102E0E18,extended,00000001
+
+[Unlock SP Robo-Ky]
+author=retro-graphics-research
+description=SP colour for Robo-Ky only (hold L1 while picking).
+patch=1,EE,102E0E1A,extended,00000001
+
+[Unlock SP Kliff Undersn]
+author=retro-graphics-research
+description=SP colour for Kliff Undersn only (hold L1 while picking).
+patch=1,EE,102E0E1C,extended,00000001
+
+[Unlock SP Justice]
+author=retro-graphics-research
+description=SP colour for Justice only (hold L1 while picking).
+patch=1,EE,102E0E1E,extended,00000001
+
+[Max play time]
+author=retro-graphics-research
+description=Play time = 1000 hours (60000 minutes, the counter cap). The game grants every time-released unlock the next time it runs its play-time check.
+patch=1,EE,202E0DD8,extended,0000EA60

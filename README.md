@@ -16,6 +16,16 @@ The source docs are read from `RETRO_REPO=/path/to/cheat-docs` or `node build.mj
 
 First deploy: `npx wrangler login`, then `npx wrangler pages project create guiltycodes --production-branch main`. With more than one Cloudflare account, set `CLOUDFLARE_ACCOUNT_ID`.
 
+## Downloads and releases
+
+The build writes each scrubbed `.pnach` to `dist/pnach/`, a zip of all of them to `dist/downloads/guiltycodes-pnach.zip`, the `/downloads/` page, and a committed copy in `pnach/` (with `pnach/index.json`). Commit `pnach/` after a build that changes it.
+
+To publish a GitHub release, push a date tag; `.github/workflows/release.yml` attaches every `pnach/*.pnach` and the zip:
+
+```sh
+git tag v2026.10.19 && git push origin v2026.10.19
+```
+
 ## What is generated, and from where
 
 | Page content | Source |

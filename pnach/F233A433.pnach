@@ -1,0 +1,695 @@
+gametitle=Guilty Gear XX Accent Core Plus (NTSC-U) [SLUS-21847] (F233A433)
+comment=Unlock codes found and verified by retro-graphics-research.
+comment=Each [section] is a separate cheat: enable only the ones you want.
+
+[Unlock everything]
+author=retro-graphics-research
+description=Mirrors the game's own debug "all open" routine (reachable only from a leftover debug menu): Kliff, Justice, all EX characters, gold and black colours, GG and GGX modes, Extra Menu, every mission and story ending, complete gallery, and through those every stage the game can unlock (34 in the carousel).
+patch=1,EE,4034E8D8,extended,000C0001
+patch=1,EE,00010001,extended,00000000
+patch=1,EE,1034E908,extended,00000001
+patch=1,EE,0034E90B,extended,00000001
+patch=1,EE,2034E90C,extended,01030101
+patch=1,EE,4034E910,extended,00050001
+patch=1,EE,01010101,extended,00000000
+patch=1,EE,1034E924,extended,00000101
+patch=1,EE,4034E928,extended,00050001
+patch=1,EE,01010101,extended,00000000
+patch=1,EE,1034E93C,extended,00000101
+patch=1,EE,00350801,extended,00000001
+patch=1,EE,10350802,extended,00000101
+patch=1,EE,40350804,extended,00D00001
+patch=1,EE,01010101,extended,00000000
+patch=1,EE,10350B44,extended,00000101
+patch=1,EE,40350B70,extended,000C0001
+patch=1,EE,02020202,extended,00000000
+patch=1,EE,20350BA0,extended,03030202
+patch=1,EE,40350BA4,extended,00050001
+patch=1,EE,03030303,extended,00000000
+patch=1,EE,10350BB8,extended,00000101
+patch=1,EE,00350BBA,extended,00000001
+
+[Unlock Kliff Undersn]
+author=retro-graphics-research
+description=Kliff on the character select screen (and his stage, Grave).
+patch=1,EE,0034E90B,extended,00000001
+
+[Unlock Justice]
+author=retro-graphics-research
+description=Justice on the character select screen (and her stage, Heaven).
+patch=1,EE,0034E90C,extended,00000001
+
+[Unlock GG mode]
+author=retro-graphics-research
+description=MODE: GG in the Start-button panel on the character select screen.
+patch=1,EE,7034E90E,extended,00000002
+
+[Unlock GGX mode]
+author=retro-graphics-research
+description=MODE: GGX in the Start-button panel on the character select screen.
+patch=1,EE,7034E90E,extended,00000001
+
+[Unlock all EX characters]
+author=retro-graphics-research
+description=CHARACTER: EX in the Start-button panel, for all 23 regular characters.
+patch=1,EE,0034E90F,extended,00000001
+patch=1,EE,4034E910,extended,00050001
+patch=1,EE,01010101,extended,00000000
+patch=1,EE,1034E924,extended,00000101
+
+[Unlock EX Sol Badguy]
+author=retro-graphics-research
+description=EX Sol Badguy only (Start panel, CHARACTER: EX).
+patch=1,EE,0034E90F,extended,00000001
+
+[Unlock EX Ky Kiske]
+author=retro-graphics-research
+description=EX Ky Kiske only (Start panel, CHARACTER: EX).
+patch=1,EE,0034E910,extended,00000001
+
+[Unlock EX May]
+author=retro-graphics-research
+description=EX May only (Start panel, CHARACTER: EX).
+patch=1,EE,0034E911,extended,00000001
+
+[Unlock EX Millia Rage]
+author=retro-graphics-research
+description=EX Millia Rage only (Start panel, CHARACTER: EX).
+patch=1,EE,0034E912,extended,00000001
+
+[Unlock EX Axl Low]
+author=retro-graphics-research
+description=EX Axl Low only (Start panel, CHARACTER: EX).
+patch=1,EE,0034E913,extended,00000001
+
+[Unlock EX Potemkin]
+author=retro-graphics-research
+description=EX Potemkin only (Start panel, CHARACTER: EX).
+patch=1,EE,0034E914,extended,00000001
+
+[Unlock EX Chipp Zanuff]
+author=retro-graphics-research
+description=EX Chipp Zanuff only (Start panel, CHARACTER: EX).
+patch=1,EE,0034E915,extended,00000001
+
+[Unlock EX Eddie]
+author=retro-graphics-research
+description=EX Eddie only (Start panel, CHARACTER: EX).
+patch=1,EE,0034E916,extended,00000001
+
+[Unlock EX Baiken]
+author=retro-graphics-research
+description=EX Baiken only (Start panel, CHARACTER: EX).
+patch=1,EE,0034E917,extended,00000001
+
+[Unlock EX Faust]
+author=retro-graphics-research
+description=EX Faust only (Start panel, CHARACTER: EX).
+patch=1,EE,0034E918,extended,00000001
+
+[Unlock EX Testament]
+author=retro-graphics-research
+description=EX Testament only (Start panel, CHARACTER: EX).
+patch=1,EE,0034E919,extended,00000001
+
+[Unlock EX Jam Kuradoberi]
+author=retro-graphics-research
+description=EX Jam Kuradoberi only (Start panel, CHARACTER: EX).
+patch=1,EE,0034E91A,extended,00000001
+
+[Unlock EX Anji Mito]
+author=retro-graphics-research
+description=EX Anji Mito only (Start panel, CHARACTER: EX).
+patch=1,EE,0034E91B,extended,00000001
+
+[Unlock EX Johnny]
+author=retro-graphics-research
+description=EX Johnny only (Start panel, CHARACTER: EX).
+patch=1,EE,0034E91C,extended,00000001
+
+[Unlock EX Venom]
+author=retro-graphics-research
+description=EX Venom only (Start panel, CHARACTER: EX).
+patch=1,EE,0034E91D,extended,00000001
+
+[Unlock EX Dizzy]
+author=retro-graphics-research
+description=EX Dizzy only (Start panel, CHARACTER: EX).
+patch=1,EE,0034E91E,extended,00000001
+
+[Unlock EX Slayer]
+author=retro-graphics-research
+description=EX Slayer only (Start panel, CHARACTER: EX).
+patch=1,EE,0034E91F,extended,00000001
+
+[Unlock EX I-No]
+author=retro-graphics-research
+description=EX I-No only (Start panel, CHARACTER: EX).
+patch=1,EE,0034E920,extended,00000001
+
+[Unlock EX Zappa]
+author=retro-graphics-research
+description=EX Zappa only (Start panel, CHARACTER: EX).
+patch=1,EE,0034E921,extended,00000001
+
+[Unlock EX Bridget]
+author=retro-graphics-research
+description=EX Bridget only (Start panel, CHARACTER: EX).
+patch=1,EE,0034E922,extended,00000001
+
+[Unlock EX Robo-Ky]
+author=retro-graphics-research
+description=EX Robo-Ky only (Start panel, CHARACTER: EX).
+patch=1,EE,0034E923,extended,00000001
+
+[Unlock EX A.B.A]
+author=retro-graphics-research
+description=EX A.B.A only (Start panel, CHARACTER: EX).
+patch=1,EE,0034E924,extended,00000001
+
+[Unlock EX Order-Sol]
+author=retro-graphics-research
+description=EX Order-Sol only (Start panel, CHARACTER: EX).
+patch=1,EE,0034E925,extended,00000001
+
+[Unlock all gold and black characters]
+author=retro-graphics-research
+description=Gold (R2 to SLASH COLOR, pick with R1) and black (R2 to RELOAD COLOR, pick with R1) versions of all 25 characters.
+patch=1,EE,4034E8D8,extended,000C0001
+patch=1,EE,00010001,extended,00000000
+patch=1,EE,1034E908,extended,00000001
+
+[Unlock gold/black Sol Badguy]
+author=retro-graphics-research
+description=Gold and black Sol Badguy only.
+patch=1,EE,1034E8D8,extended,00000001
+
+[Unlock gold/black Ky Kiske]
+author=retro-graphics-research
+description=Gold and black Ky Kiske only.
+patch=1,EE,1034E8DA,extended,00000001
+
+[Unlock gold/black May]
+author=retro-graphics-research
+description=Gold and black May only.
+patch=1,EE,1034E8DC,extended,00000001
+
+[Unlock gold/black Millia Rage]
+author=retro-graphics-research
+description=Gold and black Millia Rage only.
+patch=1,EE,1034E8DE,extended,00000001
+
+[Unlock gold/black Axl Low]
+author=retro-graphics-research
+description=Gold and black Axl Low only.
+patch=1,EE,1034E8E0,extended,00000001
+
+[Unlock gold/black Potemkin]
+author=retro-graphics-research
+description=Gold and black Potemkin only.
+patch=1,EE,1034E8E2,extended,00000001
+
+[Unlock gold/black Chipp Zanuff]
+author=retro-graphics-research
+description=Gold and black Chipp Zanuff only.
+patch=1,EE,1034E8E4,extended,00000001
+
+[Unlock gold/black Eddie]
+author=retro-graphics-research
+description=Gold and black Eddie only.
+patch=1,EE,1034E8E6,extended,00000001
+
+[Unlock gold/black Baiken]
+author=retro-graphics-research
+description=Gold and black Baiken only.
+patch=1,EE,1034E8E8,extended,00000001
+
+[Unlock gold/black Faust]
+author=retro-graphics-research
+description=Gold and black Faust only.
+patch=1,EE,1034E8EA,extended,00000001
+
+[Unlock gold/black Testament]
+author=retro-graphics-research
+description=Gold and black Testament only.
+patch=1,EE,1034E8EC,extended,00000001
+
+[Unlock gold/black Jam Kuradoberi]
+author=retro-graphics-research
+description=Gold and black Jam Kuradoberi only.
+patch=1,EE,1034E8EE,extended,00000001
+
+[Unlock gold/black Anji Mito]
+author=retro-graphics-research
+description=Gold and black Anji Mito only.
+patch=1,EE,1034E8F0,extended,00000001
+
+[Unlock gold/black Johnny]
+author=retro-graphics-research
+description=Gold and black Johnny only.
+patch=1,EE,1034E8F2,extended,00000001
+
+[Unlock gold/black Venom]
+author=retro-graphics-research
+description=Gold and black Venom only.
+patch=1,EE,1034E8F4,extended,00000001
+
+[Unlock gold/black Dizzy]
+author=retro-graphics-research
+description=Gold and black Dizzy only.
+patch=1,EE,1034E8F6,extended,00000001
+
+[Unlock gold/black Slayer]
+author=retro-graphics-research
+description=Gold and black Slayer only.
+patch=1,EE,1034E8F8,extended,00000001
+
+[Unlock gold/black I-No]
+author=retro-graphics-research
+description=Gold and black I-No only.
+patch=1,EE,1034E8FA,extended,00000001
+
+[Unlock gold/black Zappa]
+author=retro-graphics-research
+description=Gold and black Zappa only.
+patch=1,EE,1034E8FC,extended,00000001
+
+[Unlock gold/black Bridget]
+author=retro-graphics-research
+description=Gold and black Bridget only.
+patch=1,EE,1034E8FE,extended,00000001
+
+[Unlock gold/black Robo-Ky]
+author=retro-graphics-research
+description=Gold and black Robo-Ky only.
+patch=1,EE,1034E900,extended,00000001
+
+[Unlock gold/black A.B.A]
+author=retro-graphics-research
+description=Gold and black A.B.A only.
+patch=1,EE,1034E902,extended,00000001
+
+[Unlock gold/black Order-Sol]
+author=retro-graphics-research
+description=Gold and black Order-Sol only.
+patch=1,EE,1034E904,extended,00000001
+
+[Unlock gold/black Kliff Undersn]
+author=retro-graphics-research
+description=Gold and black Kliff Undersn only.
+patch=1,EE,1034E906,extended,00000001
+
+[Unlock gold/black Justice]
+author=retro-graphics-research
+description=Gold and black Justice only.
+patch=1,EE,1034E908,extended,00000001
+
+[Unlock Extra Menu]
+author=retro-graphics-research
+description=OPTIONS > EXTRA MENU (per-player attack/defense/speed/tension/life settings).
+patch=1,EE,0034E928,extended,00000001
+
+[All missions cleared]
+author=retro-graphics-research
+description=Marks all 30 missions cleared with every character (gallery mission entries). Kliff, Justice, GG/GGX and the Extra Menu are only granted when a mission is cleared in play; use their own codes.
+patch=1,EE,10350802,extended,00000101
+patch=1,EE,40350804,extended,00C20001
+patch=1,EE,01010101,extended,00000000
+patch=1,EE,10350B0C,extended,00000101
+
+[All story endings]
+author=retro-graphics-research
+description=Every character's story endings seen (also unlocks their Slash stages).
+patch=1,EE,40350B70,extended,000C0001
+patch=1,EE,02020202,extended,00000000
+patch=1,EE,20350BA0,extended,03030202
+patch=1,EE,40350BA4,extended,00050001
+patch=1,EE,03030303,extended,00000000
+patch=1,EE,10350BB8,extended,00000101
+patch=1,EE,00350BBA,extended,00000001
+
+[Gallery 100%]
+author=retro-graphics-research
+description=All 154 gallery entries: story endings, missions and the remaining gallery flags.
+patch=1,EE,10350802,extended,00000101
+patch=1,EE,40350804,extended,00C20001
+patch=1,EE,01010101,extended,00000000
+patch=1,EE,10350B0C,extended,00000101
+patch=1,EE,40350B2C,extended,00060001
+patch=1,EE,01010101,extended,00000000
+patch=1,EE,10350B44,extended,00000101
+patch=1,EE,40350B70,extended,000C0001
+patch=1,EE,02020202,extended,00000000
+patch=1,EE,20350BA0,extended,03030202
+patch=1,EE,40350BA4,extended,00050001
+patch=1,EE,03030303,extended,00000000
+patch=1,EE,10350BB8,extended,00000101
+patch=1,EE,00350BBA,extended,00000001
+
+[Max play time]
+author=retro-graphics-research
+description=Total play time = 1000 hours (60000 minutes, the game's cap). Unlocks every time-released item the next time the game checks (entering the Gallery, loading system data), and the Slash stages at once.
+patch=1,EE,2034E8B8,extended,0000EA60
+
+[Stage select: all 34 unlockable stages]
+author=retro-graphics-research
+description=Every stage the game itself can unlock, selectable now (changes no save data). Turn it on before entering character select.
+patch=1,EE,203D8E54,extended,00000001
+patch=1,EE,203D8E78,extended,00000001
+patch=1,EE,203D8EC0,extended,00000001
+patch=1,EE,203D8EE4,extended,00000001
+patch=1,EE,203D8F08,extended,00000001
+patch=1,EE,203D8F50,extended,00000001
+patch=1,EE,203D8F74,extended,00000001
+patch=1,EE,203D8F98,extended,00000001
+patch=1,EE,203D8FBC,extended,00000001
+patch=1,EE,203D8FE0,extended,00000001
+patch=1,EE,203D9004,extended,00000001
+patch=1,EE,203D9028,extended,00000001
+patch=1,EE,203D904C,extended,00000001
+patch=1,EE,203D9070,extended,00000001
+patch=1,EE,203D9094,extended,00000001
+patch=1,EE,203D90B8,extended,00000001
+patch=1,EE,203D90DC,extended,00000001
+patch=1,EE,203D93F4,extended,00000001
+patch=1,EE,203D9418,extended,00000001
+patch=1,EE,203D943C,extended,00000001
+patch=1,EE,203D9460,extended,00000001
+patch=1,EE,203D9484,extended,00000001
+patch=1,EE,203D94A8,extended,00000001
+patch=1,EE,203D94CC,extended,00000001
+patch=1,EE,203D94F0,extended,00000001
+patch=1,EE,203D9514,extended,00000001
+patch=1,EE,203D9538,extended,00000001
+patch=1,EE,203D955C,extended,00000001
+patch=1,EE,203D9580,extended,00000001
+patch=1,EE,203D95A4,extended,00000001
+patch=1,EE,203D95C8,extended,00000001
+patch=1,EE,203D95EC,extended,00000001
+patch=1,EE,203D9610,extended,00000001
+patch=1,EE,203D9634,extended,00000001
+
+[Stage select: hidden stages too]
+author=retro-graphics-research
+description=Adds the 21 stages the game never offers: Russia and Nirvana (Accent Core versions), the #Reload versions and Grave/Heaven (Slash). Use with the code above for all 55. Turn it on before entering character select.
+patch=1,EE,203D8E9C,extended,00000001
+patch=1,EE,203D8F2C,extended,00000001
+patch=1,EE,203D9124,extended,00000001
+patch=1,EE,203D9148,extended,00000001
+patch=1,EE,203D916C,extended,00000001
+patch=1,EE,203D9190,extended,00000001
+patch=1,EE,203D91B4,extended,00000001
+patch=1,EE,203D91D8,extended,00000001
+patch=1,EE,203D91FC,extended,00000001
+patch=1,EE,203D9220,extended,00000001
+patch=1,EE,203D9244,extended,00000001
+patch=1,EE,203D9268,extended,00000001
+patch=1,EE,203D928C,extended,00000001
+patch=1,EE,203D92B0,extended,00000001
+patch=1,EE,203D92D4,extended,00000001
+patch=1,EE,203D92F8,extended,00000001
+patch=1,EE,203D931C,extended,00000001
+patch=1,EE,203D9388,extended,00000001
+patch=1,EE,203D93AC,extended,00000001
+patch=1,EE,203D9658,extended,00000001
+patch=1,EE,203D967C,extended,00000001
+
+[Load any stage (edit value)]
+author=retro-graphics-research
+description=Pins the stage-select cursor to one stage table entry; press Cross and that stage loads. Default 00000002 = entry 2, Russia. Valid entries 0-18, 20-34, 37, 38, 40-58 (see CHEATS.md). Turn it off after the fight starts, or the carousel cannot move.
+patch=1,EE,203D4A10,extended,00000002
+
+[Stage select: London (entry 0)]
+author=retro-graphics-research
+description=Puts stage table entry 0 in the carousel.
+patch=1,EE,203D8E54,extended,00000001
+
+[Stage select: Colony (entry 1)]
+author=retro-graphics-research
+description=Puts stage table entry 1 in the carousel.
+patch=1,EE,203D8E78,extended,00000001
+
+[Stage select: Russia (entry 2)]
+author=retro-graphics-research
+description=Puts stage table entry 2 in the carousel.
+patch=1,EE,203D8E9C,extended,00000001
+
+[Stage select: China (entry 3)]
+author=retro-graphics-research
+description=Puts stage table entry 3 in the carousel.
+patch=1,EE,203D8EC0,extended,00000001
+
+[Stage select: May Ship (entry 4)]
+author=retro-graphics-research
+description=Puts stage table entry 4 in the carousel.
+patch=1,EE,203D8EE4,extended,00000001
+
+[Stage select: Zepp (entry 5)]
+author=retro-graphics-research
+description=Puts stage table entry 5 in the carousel.
+patch=1,EE,203D8F08,extended,00000001
+
+[Stage select: Nirvana (entry 6)]
+author=retro-graphics-research
+description=Puts stage table entry 6 in the carousel.
+patch=1,EE,203D8F2C,extended,00000001
+
+[Stage select: Paris (entry 7)]
+author=retro-graphics-research
+description=Puts stage table entry 7 in the carousel.
+patch=1,EE,203D8F50,extended,00000001
+
+[Stage select: Hell (entry 8)]
+author=retro-graphics-research
+description=Puts stage table entry 8 in the carousel.
+patch=1,EE,203D8F74,extended,00000001
+
+[Stage select: Grove (entry 9)]
+author=retro-graphics-research
+description=Puts stage table entry 9 in the carousel.
+patch=1,EE,203D8F98,extended,00000001
+
+[Stage select: Verdant (entry 10)]
+author=retro-graphics-research
+description=Puts stage table entry 10 in the carousel.
+patch=1,EE,203D8FBC,extended,00000001
+
+[Stage select: Castle (entry 11)]
+author=retro-graphics-research
+description=Puts stage table entry 11 in the carousel.
+patch=1,EE,203D8FE0,extended,00000001
+
+[Stage select: Babylon (entry 12)]
+author=retro-graphics-research
+description=Puts stage table entry 12 in the carousel.
+patch=1,EE,203D9004,extended,00000001
+
+[Stage select: Phantom City (entry 13)]
+author=retro-graphics-research
+description=Puts stage table entry 13 in the carousel.
+patch=1,EE,203D9028,extended,00000001
+
+[Stage select: Unknown (entry 14)]
+author=retro-graphics-research
+description=Puts stage table entry 14 in the carousel.
+patch=1,EE,203D904C,extended,00000001
+
+[Stage select: Frasco (entry 15)]
+author=retro-graphics-research
+description=Puts stage table entry 15 in the carousel.
+patch=1,EE,203D9070,extended,00000001
+
+[Stage select: A.D. 2172 (entry 16)]
+author=retro-graphics-research
+description=Puts stage table entry 16 in the carousel.
+patch=1,EE,203D9094,extended,00000001
+
+[Stage select: Grave (entry 17)]
+author=retro-graphics-research
+description=Puts stage table entry 17 in the carousel.
+patch=1,EE,203D90B8,extended,00000001
+
+[Stage select: Heaven (entry 18)]
+author=retro-graphics-research
+description=Puts stage table entry 18 in the carousel.
+patch=1,EE,203D90DC,extended,00000001
+
+[Stage select: London (#Reload) (entry 20)]
+author=retro-graphics-research
+description=Puts stage table entry 20 in the carousel.
+patch=1,EE,203D9124,extended,00000001
+
+[Stage select: Colony (#Reload) (entry 21)]
+author=retro-graphics-research
+description=Puts stage table entry 21 in the carousel.
+patch=1,EE,203D9148,extended,00000001
+
+[Stage select: Russia (#Reload) (entry 22)]
+author=retro-graphics-research
+description=Puts stage table entry 22 in the carousel.
+patch=1,EE,203D916C,extended,00000001
+
+[Stage select: China (#Reload) (entry 23)]
+author=retro-graphics-research
+description=Puts stage table entry 23 in the carousel.
+patch=1,EE,203D9190,extended,00000001
+
+[Stage select: May Ship (#Reload) (entry 24)]
+author=retro-graphics-research
+description=Puts stage table entry 24 in the carousel.
+patch=1,EE,203D91B4,extended,00000001
+
+[Stage select: Zepp (#Reload) (entry 25)]
+author=retro-graphics-research
+description=Puts stage table entry 25 in the carousel.
+patch=1,EE,203D91D8,extended,00000001
+
+[Stage select: Nirvana (#Reload) (entry 26)]
+author=retro-graphics-research
+description=Puts stage table entry 26 in the carousel.
+patch=1,EE,203D91FC,extended,00000001
+
+[Stage select: Paris (#Reload) (entry 27)]
+author=retro-graphics-research
+description=Puts stage table entry 27 in the carousel.
+patch=1,EE,203D9220,extended,00000001
+
+[Stage select: Hell (#Reload) (entry 28)]
+author=retro-graphics-research
+description=Puts stage table entry 28 in the carousel.
+patch=1,EE,203D9244,extended,00000001
+
+[Stage select: Grove (#Reload) (entry 29)]
+author=retro-graphics-research
+description=Puts stage table entry 29 in the carousel.
+patch=1,EE,203D9268,extended,00000001
+
+[Stage select: Verdant (#Reload) (entry 30)]
+author=retro-graphics-research
+description=Puts stage table entry 30 in the carousel.
+patch=1,EE,203D928C,extended,00000001
+
+[Stage select: Castle (#Reload) (entry 31)]
+author=retro-graphics-research
+description=Puts stage table entry 31 in the carousel.
+patch=1,EE,203D92B0,extended,00000001
+
+[Stage select: Babylon (#Reload) (entry 32)]
+author=retro-graphics-research
+description=Puts stage table entry 32 in the carousel.
+patch=1,EE,203D92D4,extended,00000001
+
+[Stage select: Phantom City (#Reload) (entry 33)]
+author=retro-graphics-research
+description=Puts stage table entry 33 in the carousel.
+patch=1,EE,203D92F8,extended,00000001
+
+[Stage select: Unknown (#Reload) (entry 34)]
+author=retro-graphics-research
+description=Puts stage table entry 34 in the carousel.
+patch=1,EE,203D931C,extended,00000001
+
+[Stage select: Grave (#Reload) (entry 37)]
+author=retro-graphics-research
+description=Puts stage table entry 37 in the carousel.
+patch=1,EE,203D9388,extended,00000001
+
+[Stage select: Heaven (#Reload) (entry 38)]
+author=retro-graphics-research
+description=Puts stage table entry 38 in the carousel.
+patch=1,EE,203D93AC,extended,00000001
+
+[Stage select: London (Slash) (entry 40)]
+author=retro-graphics-research
+description=Puts stage table entry 40 in the carousel.
+patch=1,EE,203D93F4,extended,00000001
+
+[Stage select: Colony (Slash) (entry 41)]
+author=retro-graphics-research
+description=Puts stage table entry 41 in the carousel.
+patch=1,EE,203D9418,extended,00000001
+
+[Stage select: Russia (Slash) (entry 42)]
+author=retro-graphics-research
+description=Puts stage table entry 42 in the carousel.
+patch=1,EE,203D943C,extended,00000001
+
+[Stage select: China (Slash) (entry 43)]
+author=retro-graphics-research
+description=Puts stage table entry 43 in the carousel.
+patch=1,EE,203D9460,extended,00000001
+
+[Stage select: May Ship (Slash) (entry 44)]
+author=retro-graphics-research
+description=Puts stage table entry 44 in the carousel.
+patch=1,EE,203D9484,extended,00000001
+
+[Stage select: Zepp (Slash) (entry 45)]
+author=retro-graphics-research
+description=Puts stage table entry 45 in the carousel.
+patch=1,EE,203D94A8,extended,00000001
+
+[Stage select: Nirvana (Slash) (entry 46)]
+author=retro-graphics-research
+description=Puts stage table entry 46 in the carousel.
+patch=1,EE,203D94CC,extended,00000001
+
+[Stage select: Paris (Slash) (entry 47)]
+author=retro-graphics-research
+description=Puts stage table entry 47 in the carousel.
+patch=1,EE,203D94F0,extended,00000001
+
+[Stage select: Hell (Slash) (entry 48)]
+author=retro-graphics-research
+description=Puts stage table entry 48 in the carousel.
+patch=1,EE,203D9514,extended,00000001
+
+[Stage select: Grove (Slash) (entry 49)]
+author=retro-graphics-research
+description=Puts stage table entry 49 in the carousel.
+patch=1,EE,203D9538,extended,00000001
+
+[Stage select: Verdant (Slash) (entry 50)]
+author=retro-graphics-research
+description=Puts stage table entry 50 in the carousel.
+patch=1,EE,203D955C,extended,00000001
+
+[Stage select: Castle (Slash) (entry 51)]
+author=retro-graphics-research
+description=Puts stage table entry 51 in the carousel.
+patch=1,EE,203D9580,extended,00000001
+
+[Stage select: Babylon (Slash) (entry 52)]
+author=retro-graphics-research
+description=Puts stage table entry 52 in the carousel.
+patch=1,EE,203D95A4,extended,00000001
+
+[Stage select: Phantom City (Slash) (entry 53)]
+author=retro-graphics-research
+description=Puts stage table entry 53 in the carousel.
+patch=1,EE,203D95C8,extended,00000001
+
+[Stage select: Unknown (Slash) (entry 54)]
+author=retro-graphics-research
+description=Puts stage table entry 54 in the carousel.
+patch=1,EE,203D95EC,extended,00000001
+
+[Stage select: Frasco (Slash) (entry 55)]
+author=retro-graphics-research
+description=Puts stage table entry 55 in the carousel.
+patch=1,EE,203D9610,extended,00000001
+
+[Stage select: A.D. 2172 (Slash) (entry 56)]
+author=retro-graphics-research
+description=Puts stage table entry 56 in the carousel.
+patch=1,EE,203D9634,extended,00000001
+
+[Stage select: Grave (Slash) (entry 57)]
+author=retro-graphics-research
+description=Puts stage table entry 57 in the carousel.
+patch=1,EE,203D9658,extended,00000001
+
+[Stage select: Heaven (Slash) (entry 58)]
+author=retro-graphics-research
+description=Puts stage table entry 58 in the carousel.
+patch=1,EE,203D967C,extended,00000001

@@ -75,7 +75,7 @@ export function shell({ title, desc, path, site, crumbs = [], body, wide = false
   <a class="brand" href="/">${LOGO}</a>
   <form class="topsearch" action="/search/" role="search"><label class="sr" for="tq">Search codes</label><input id="tq" name="q" type="search" placeholder="Search codes" autocomplete="off"><button type="submit">Go</button></form>
 </header>
-<nav class="topnav" aria-label="Main"><a href="/">Home</a><a href="/games/">Games</a><a href="/how-to/">How to use</a><a href="/credits/">Credits</a><a href="/search/">Search</a></nav>
+<nav class="topnav" aria-label="Main"><a href="/">Home</a><a href="/games/">Games</a><a href="/downloads/">Downloads</a><a href="/how-to/">How to use</a><a href="/credits/">Credits</a><a href="/search/">Search</a></nav>
 <nav class="platnav" aria-label="Games">${games.map((g) => `<a href="/games/${g.slug}/">${esc(g.short)}</a>`).join("")}</nav>
 <div class="cols">
 <aside class="side">
@@ -173,6 +173,7 @@ export function homePage(site) {
 <form class="bigsearch" action="/search/" role="search"><label class="sr" for="hq">Search codes</label><input id="hq" name="q" type="search" placeholder="Search codes, e.g. Kliff, gold, stage" autocomplete="off"><button type="submit">Search</button></form></div></div>
 ${box("Games", `<div class="tablewrap"><table class="grid"><thead><tr><th>Game</th><th>Releases</th><th class="num">Codes</th><th>Verified</th></tr></thead><tbody>${rows}</tbody></table></div>`)}
 ${box("Unlock everything", `<div class="tablewrap"><table class="grid"><thead><tr><th>Game</th><th>Release</th><th>Status</th></tr></thead><tbody>${ue}</tbody></table></div>`)}
+${box("Downloads", `<p><a href="/downloads/">Every .pnach file</a>, one per release, or <a href="/downloads/${ZIP}" download>all of them in one zip</a>.</p>`)}
 ${box("Status key", statusKey(shared))}`;
   return shell({ title: "Guilty Codes: Guilty Gear PS2 cheat codes", desc: "Unlock codes and PCSX2 cheat files for the Guilty Gear PS2 games, with test results.", path: "/", site, body });
 }
@@ -186,7 +187,7 @@ function statusKey(shared) {
 export function gamesIndex(site) {
   const body = `${pageTitle("Games")}${box(
     "All games",
-    `<div class="tablewrap"><table class="grid"><thead><tr><th>Release</th><th>Region</th><th>Serial</th><th>CRC</th><th class="num">Codes</th><th>Verified</th></tr></thead><tbody>${site.games
+    `<div class="tablewrap"><table class="grid"><thead><tr><th>Release</th><th>Region</th><th class="wide">Serial</th><th class="wide">CRC</th><th class="num">Codes</th><th>Verified</th></tr></thead><tbody>${site.games
       .map(
         (g) =>
           `<tr class="grp"><td colspan="6"><a href="/games/${g.slug}/">${esc(g.title)}</a></td></tr>` +
@@ -430,6 +431,19 @@ ${box("SE and VOICE volume", prose(md(s.sideEffect.replace(/^\*\*[^*]+\*\*\s*/, 
 ${box("Both versions tested", prose(md(tableToMd(s.lee4Tests.header, s.lee4Tests.rows), { shift: 0 })))}`;
   return shell({ title: `lee4 codes: 2014 and 2009 | ${r.game.title} | Guilty Codes`, desc: "lee4's 2014 unlock codes and the superseded 2009 version for Accent Core Plus (SLUS-21847).", site, body,
     crumbs: [{ label: "Games", href: "/games/" }, { label: r.game.title, href: `/games/${r.game.slug}/`, game: r.game.id }, { label: r.label, href: r.url }, { label: "lee4" }] });
+}
+
+// ----- downloads -----
+export const ZIP = "guiltycodes-pnach.zip";
+export function downloadsPage(site, files) {
+  const rows = files
+    .map((f) => `<tr><td><a href="${f.release.url}">${esc(f.release.game.title)}</a></td><td>${esc(f.release.label)}</td><td class="wide">${esc(f.release.serial)}</td><td class="wide">${esc(f.release.crc)}</td><td class="num">${f.release.codes.length}</td><td><a href="/pnach/${esc(f.file)}" download>${esc(f.file)}</a></td></tr>`)
+    .join("");
+  const body = `${pageTitle("Downloads", "PCSX2 cheat files. Put one in the <code>cheats</code> folder and turn on cheats; see <a href=\"/how-to/\">How to use</a>.")}
+${files.length ? `<p class="dl"><a class="dlbtn" href="/downloads/${ZIP}" download>Download all (${files.length} files, zip)</a></p>
+${box("Files", `<div class="tablewrap"><table class="grid"><thead><tr><th>Game</th><th>Release</th><th class="wide">Serial</th><th class="wide">CRC</th><th class="num">Codes</th><th>File</th></tr></thead><tbody>${rows}</tbody></table></div>`)}` : box("Files", "<p>No cheat files in this build.</p>")}
+${box("GitHub", `<p>Each version is also a <a class="ext" rel="noopener noreferrer" href="https://github.com/devin-thomas/guiltycodes/releases/latest">GitHub release</a> with the same files.</p>`)}`;
+  return shell({ title: "Downloads | Guilty Codes", desc: `${files.length} PCSX2 .pnach cheat files for the Guilty Gear PS2 games.`, site, body, crumbs: [{ label: "Downloads" }] });
 }
 
 // ----- how to / credits / search / 404 -----

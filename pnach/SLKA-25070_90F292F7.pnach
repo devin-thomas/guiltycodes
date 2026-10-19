@@ -1,0 +1,31 @@
+gametitle=Guilty Gear XX #Reload (Korea) [SLKA-25070] (90F292F7)
+comment=Unlock codes by retro-graphics-research.
+comment=Each [section] is a separate cheat: enable only the ones you want.
+
+[Unlock hidden characters and GG mode]
+author=retro-graphics-research
+description=Kliff and Justice on the wheel and GAME OPTIONS > GG-MODE (OFF / GG / GGX): +0xBF ... +0xC2.
+patch=1,EE,00307187,extended,00000001
+patch=1,EE,10307188,extended,00000101
+patch=1,EE,0030718A,extended,00000001
+
+[Unlock all EX characters]
+author=retro-graphics-research
+description=EX flags +0xC3 ... +0xD6 (hold L2 while picking).
+patch=1,EE,0030718B,extended,00000001
+patch=1,EE,4030718C,extended,00040001
+patch=1,EE,01010101,extended,00000000
+patch=1,EE,1030719C,extended,00000101
+patch=1,EE,0030719E,extended,00000001
+
+[Unlock all SP colours]
+author=retro-graphics-research
+description=SP flags +0x90 ... +0xBC, u16 each (hold L1 while picking).
+patch=1,EE,40307158,extended,000B0001
+patch=1,EE,00010001,extended,00000000
+patch=1,EE,10307184,extended,00000001
+
+[Max play time]
+author=retro-graphics-research
+description=Play time 60000 minutes (+0x70).
+patch=1,EE,20307138,extended,0000EA60

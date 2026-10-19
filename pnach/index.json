@@ -1,0 +1,74 @@
+[
+  {
+    "file": "SLPS-25184_4B6DDB6B.pnach",
+    "game": "Guilty Gear XX / X2",
+    "release": "JP XX",
+    "serial": "SLPS-25184",
+    "crc": "4B6DDB6B",
+    "codes": 4
+  },
+  {
+    "file": "SLUS-20436_913FBFB8.pnach",
+    "game": "Guilty Gear XX / X2",
+    "release": "US X2",
+    "serial": "SLUS-20436",
+    "crc": "913FBFB8",
+    "codes": 51
+  },
+  {
+    "file": "SLKA-25070_90F292F7.pnach",
+    "game": "Guilty Gear XX #Reload",
+    "release": "KR",
+    "serial": "SLKA-25070",
+    "crc": "90F292F7",
+    "codes": 4
+  },
+  {
+    "file": "SLPS-25261_21FCC394.pnach",
+    "game": "Guilty Gear XX #Reload",
+    "release": "JP",
+    "serial": "SLPS-25261",
+    "crc": "21FCC394",
+    "codes": 4
+  },
+  {
+    "file": "SLUS-21652_A8A76AAC.pnach",
+    "game": "Guilty Gear XX Accent Core",
+    "release": "US",
+    "serial": "SLUS-21652",
+    "crc": "A8A76AAC",
+    "codes": 49
+  },
+  {
+    "file": "F233A433.pnach",
+    "game": "Guilty Gear XX Accent Core Plus",
+    "release": "US",
+    "serial": "SLUS-21847",
+    "crc": "F233A433",
+    "codes": 134
+  },
+  {
+    "file": "SLPM-66964_45D92B79.pnach",
+    "game": "Guilty Gear XX Accent Core Plus",
+    "release": "JP Append",
+    "serial": "SLPM-66964",
+    "crc": "45D92B79",
+    "codes": 118
+  },
+  {
+    "file": "SLPM-66965_61FE9C13.pnach",
+    "game": "Guilty Gear XX Accent Core Plus",
+    "release": "JP",
+    "serial": "SLPM-66965",
+    "crc": "61FE9C13",
+    "codes": 118
+  },
+  {
+    "file": "SLPM-66333_06DE61E0.pnach",
+    "game": "Guilty Gear XX Slash",
+    "release": "JP",
+    "serial": "SLPM-66333",
+    "crc": "06DE61E0",
+    "codes": 4
+  }
+]

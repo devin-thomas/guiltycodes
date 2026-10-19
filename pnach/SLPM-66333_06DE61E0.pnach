@@ -1,0 +1,30 @@
+gametitle=Guilty Gear XX Slash (NTSC-J) [SLPM-66333] (06DE61E0)
+comment=Unlock codes by retro-graphics-research.
+comment=Each [section] is a separate cheat: enable only the ones you want.
+
+[Unlock Kliff and Justice]
+author=retro-graphics-research
+description=Kliff and Justice on the character wheel.
+patch=1,EE,002EAA53,extended,00000001
+patch=1,EE,002EAA54,extended,00000001
+
+[Unlock GG mode and EX characters]
+author=retro-graphics-research
+description=GG mode (+0x23E) and all 23 EX characters: the Start panel (CHARACTER MODE) appears on the character wheel.
+patch=1,EE,002EAA56,extended,00000001
+patch=1,EE,002EAA57,extended,00000001
+patch=1,EE,402EAA58,extended,00050001
+patch=1,EE,01010101,extended,00000000
+patch=1,EE,102EAA6C,extended,00000101
+
+[Unlock all gold and black colours]
+author=retro-graphics-research
+description=Gold/black flags for all 25 characters.
+patch=1,EE,402EAA20,extended,000C0001
+patch=1,EE,00010001,extended,00000000
+patch=1,EE,102EAA50,extended,00000001
+
+[Max play time]
+author=retro-graphics-research
+description=Play time 60000 minutes; the play-time check grants the time-released unlocks.
+patch=1,EE,202EAA00,extended,0000EA60

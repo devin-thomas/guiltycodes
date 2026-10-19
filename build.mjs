@@ -3,6 +3,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { build as esbuild } from "esbuild";
+import { zipSync, strToU8 } from "fflate";
 import { loadSite } from "./build/data.mjs";
 import * as R from "./build/render.mjs";
 import { esc, scrub } from "./build/lib.mjs";
@@ -39,6 +40,7 @@ put("/search/", R.searchPage(site));
 fs.writeFileSync(path.join(DIST, "404.html"), R.notFoundPage(site));
 
 const search = [];
+const files = [];
 for (const g of site.games) {
   put(`/games/${g.slug}/`, R.gamePage(g, site));
   for (const r of g.releases) {
@@ -56,11 +58,25 @@ for (const g of site.games) {
     if (r.pnachText) {
       const clean = scrub(r.pnachText).replace(/\s*\(games\/[^)]*\)/g, "");
       fs.mkdirSync(path.join(DIST, "pnach"), { recursive: true });
-      fs.writeFileSync(path.join(DIST, "pnach", r.pnachFile), clean.endsWith("\n") ? clean : clean + "\n");
+      const text = clean.endsWith("\n") ? clean : clean + "\n";
+      fs.writeFileSync(path.join(DIST, "pnach", r.pnachFile), text);
+      files.push({ file: r.pnachFile, release: r, text });
     }
   }
 }
 put("/search.json", JSON.stringify(search));
+
+// ---- downloads: /downloads/, the zip, and the committed pnach/ folder the GitHub release ships ----
+files.sort((a, b) => a.release.game.title.localeCompare(b.release.game.title) || a.file.localeCompare(b.file));
+put("/downloads/", R.downloadsPage(site, files));
+fs.writeFileSync(path.join(DIST, "downloads", R.ZIP), zipSync(Object.fromEntries(files.map((f) => [f.file, strToU8(f.text)])), { mtime: new Date("2000-01-01") }));
+fs.rmSync("pnach", { recursive: true, force: true });
+fs.mkdirSync("pnach");
+for (const f of files) fs.writeFileSync(path.join("pnach", f.file), f.text);
+fs.writeFileSync(
+  path.join("pnach", "index.json"),
+  JSON.stringify(files.map((f) => ({ file: f.file, game: f.release.game.title, release: f.release.label, serial: f.release.serial, crc: f.release.crc, codes: f.release.codes.length })), null, 2) + "\n",
+);
 
 // ---- assets ----
 const A = path.join(DIST, "assets");
