@@ -6,7 +6,7 @@ import { execFileSync } from "node:child_process";
 import { parsePnach } from "./lib.mjs";
 
 export const CATALOG_PATH = "games/guiltycodes/catalog";
-export const FEATURE_CATEGORIES = ["Native shortcuts", "Training", "CPU and controls", "Match rules", "Presentation", "Unlocks", "Utilities"];
+export const FEATURE_CATEGORIES = ["Native shortcuts", "Survival", "Training", "CPU and controls", "Match rules", "Presentation", "Unlocks", "Utilities"];
 export const FEATURE_KINDS = ["native-tip", "simple-code", "compiled-module"];
 const digest = (bytes) => createHash("sha256").update(bytes).digest("hex");
 const fail = (message) => { throw new Error(`Catalog: ${message}`); };

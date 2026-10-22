@@ -21,9 +21,9 @@ jobs:
           {
             echo "PCSX2 cheat files for the Guilty Gear PS2 games. Put one in PCSX2's \`cheats\` folder and turn on cheats."
             echo
-            echo "| File | Game | Release | Serial | CRC | Codes |"
-            echo "|---|---|---|---|---|---|"
-            jq -r '.[] | "| \(.file) | \(.game) | \(.release) | \(.serial) | \(.crc) | \(.codes) |"' pnach/index.json
+            echo "| File | Game | Release | Serial | CRC | Feature pages | Patch sections |"
+            echo "|---|---|---|---|---|---|---|---|"
+            jq -r '.[] | "| \(.file) | \(.game) | \(.release) | \(.serial) | \(.crc) | \(.featurePages) | \(.patchSections) |"' pnach/index.json
             echo
             echo "Every code with its test status: https://guiltycodes.pages.dev/downloads/"
           } > notes.md

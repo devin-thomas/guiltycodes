@@ -18,6 +18,7 @@
   },
   "private": true,
   "devDependencies": {
-    "simple-icons": "^16.35.0"
+    "simple-icons": "^16.35.0",
+    "wrangler": "^4.152.0"
   }
 }

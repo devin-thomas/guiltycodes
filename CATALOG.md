@@ -51,7 +51,7 @@ or related set. IDs are unique, stable kebab-case identifiers across all files.
 
 `description` is optional; its fallback is the measured evidence result. All
 other fields above are required for a published native tip. Categories are
-`Native shortcuts`, `Training`, `CPU and controls`, `Match rules`,
+`Native shortcuts`, `Survival`, `Training`, `CPU and controls`, `Match rules`,
 `Presentation`, `Unlocks`, and `Utilities`.
 
 Kinds have different payloads:
