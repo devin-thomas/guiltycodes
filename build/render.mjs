@@ -317,6 +317,9 @@ export function codePage(c, site, idx) {
     ["Real hardware", badge(c.hardware)],
   ];
   const rawBlock = c.kind === "native-tip" ? `<ol>${c.instructions.map((instruction) => `<li>${esc(instruction)}</li>`).join("")}</ol>` : c.kind === "compiled-module" ? `<p>Install the complete module using the download below. It contains ${c.artifact.sectionCount} patch sections.</p>` : `<div class="boxcopy"><button class="copy" type="button" data-target="raw">Copy</button><pre class="code" id="raw" tabindex="0">${esc(c.raw.join("\n"))}</pre></div>${c.inputNote ? `<p>${esc(c.inputNote)}</p>` : ""}`;
+  const instructions = c.kind && c.kind !== "native-tip" && c.instructions.length
+    ? box("Setup instructions", `<ol>${c.instructions.map((instruction) => `<li>${esc(instruction)}</li>`).join("")}</ol>`)
+    : "";
   const pnachBlock = c.artifact
     ? `<p><a class="dlbtn" href="/pnach/${esc(c.artifact.file)}" download>Download ${esc(c.artifact.file)}</a></p><p>${c.artifact.sectionCount} patch sections. SHA-256: <code class="hash">${esc(c.artifact.sha256)}</code></p>`
     : c.pnach
@@ -330,7 +333,7 @@ export function codePage(c, site, idx) {
   const checked = c.checked ? `<p>${esc(sentence(c.checked))}</p>` : `<p>No individual test run.</p>`;
   const nav = `<nav class="pn"><span>${idx.prev ? `<a href="${idx.prev.url}" rel="prev">&laquo; ${esc(shortTitle(idx.prev))}</a>` : ""}</span><span>${idx.next ? `<a href="${idx.next.url}" rel="next">${esc(shortTitle(idx.next))} &raquo;</a>` : ""}</span></nav>`;
   const body = `${pageTitle(c.title)}${warn}<table class="kv meta">${rows.map(([k, v]) => `<tr><th>${k}</th><td>${v}</td></tr>`).join("")}</table>
-${box(c.kind === "native-tip" ? "Instructions" : c.kind === "compiled-module" ? "Compiled module" : "Raw code", rawBlock)}${c.kind === "native-tip" ? "" : box("PCSX2", pnachBlock)}${box("Effect", `<p>${esc(c.effect)}</p>`)}${box("Test result", checked)}${featureDetails(c)}${box("Credit", credit)}${nav}`;
+${box(c.kind === "native-tip" ? "Instructions" : c.kind === "compiled-module" ? "Compiled module" : "Raw code", rawBlock)}${c.kind === "native-tip" ? "" : box("PCSX2", pnachBlock)}${instructions}${box("Effect", `<p>${esc(c.effect)}</p>`)}${box("Test result", checked)}${featureDetails(c)}${box("Credit", credit)}${nav}`;
   return shell({
     title: `${c.title} | ${r.game.title} ${r.label} | Guilty Codes`,
     desc: `${c.title}: ${shortEffect(c.effect)} ${r.serial}, CRC ${r.crc}.`,

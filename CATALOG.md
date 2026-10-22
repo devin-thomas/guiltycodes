@@ -72,6 +72,13 @@ Kinds have different payloads:
   The PNACH `gametitle` must contain the exact serial and CRC. Every section
   needs patches, and patches use `patch=0` or `patch=1` with EE extended codes.
 
+Simple codes and compiled modules may also provide a nonempty `instructions`
+array. These ordered steps appear in a separate **Setup instructions** panel,
+so preset details, CPU modes, stat limits, and ability ordering reach the public
+page alongside the complete download. Native tips use their existing
+**Instructions** panel once. If present, instructions must be an array of
+nonempty strings; an empty array or another type fails validation.
+
 Only entries explicitly marked `publication: "published"` can reach the site.
 Drafts need only `id` and `publication: "draft"`; unfinished draft payloads are
 ignored and their artifacts cannot appear in downloads or search.

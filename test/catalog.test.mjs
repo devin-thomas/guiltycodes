@@ -55,6 +55,51 @@ test("accepts native tips, raw codes and intact multi-section modules without fl
   assert.equal(entries[2].artifact.sha256, sha(entries[2].artifact.text));
 });
 
+for (const kind of ["simple-code", "compiled-module"]) {
+  for (const instructions of ["not an array", [], [""]]) {
+    test(`${kind} rejects invalid optional instructions ${JSON.stringify(instructions)}`, (t) => {
+      const f = fixture(t);
+      f.feature.kind = kind;
+      f.feature.instructions = instructions;
+      if (kind === "simple-code") f.feature.raw = ["20123450 00000001"];
+      else f.feature.artifact = { path: artifactPath, sha256: sha(artifactText) };
+      f.write([f.feature]);
+      assert.throws(() => loadCatalog(f.repo, [f.release]), /instructions/);
+    });
+  }
+}
+
+test("compiled setup instructions render publicly and native instructions appear only once", (t) => {
+  const f = fixture(t);
+  f.feature.kind = "compiled-module";
+  f.feature.artifact = { path: artifactPath, sha256: sha(artifactText) };
+  f.feature.instructions = ["VENOM 640 / HUNTER: Gold Venom, FIXED CPU 32.", "SOL 960 / LIFE REC: EXP Up, Hunter, Life Recovery, in that order."];
+  f.write([f.feature]);
+  const release = { ...f.release, label: "US", game: { id: "fixture", title: "Fixture", slug: "fixture" }, url: "/games/fixture/us/" };
+  const script = `
+    import { loadCatalog } from "./build/catalog.mjs";
+    import { codePage } from "./build/render.mjs";
+    const release = JSON.parse(process.env.RENDER_RELEASE);
+    const [feature] = loadCatalog(process.env.RETRO_REPO, [release]);
+    feature.url = release.url + feature.id + "/";
+    release.codes.push(feature);
+    const site = { games: [], priorMap: new Map(), built: "2026-10-22" };
+    const compiled = codePage(feature, site, {});
+    feature.kind = "native-tip";
+    const native = codePage(feature, site, {});
+    console.log(JSON.stringify({ compiled, native }));
+  `;
+  const pages = JSON.parse(execFileSync(process.execPath, ["--input-type=module", "-e", script], {
+    cwd: new URL("..", import.meta.url), encoding: "utf8",
+    env: { ...process.env, RETRO_REPO: f.repo, RENDER_RELEASE: JSON.stringify(release) },
+  }));
+  assert.match(pages.compiled, /Setup instructions/);
+  assert.match(pages.compiled, /<ol><li>VENOM 640 \/ HUNTER: Gold Venom, FIXED CPU 32\.<\/li>/);
+  assert.match(pages.compiled, /EXP Up, Hunter, Life Recovery, in that order/);
+  assert.equal(pages.native.match(/VENOM 640 \/ HUNTER/g).length, 1);
+  assert.doesNotMatch(pages.native, /Setup instructions/);
+});
+
 for (const [name, mutate, message] of [
   ["untested evidence", (f) => { f.evidence.status = "NOT TESTED"; }, /VERIFIED runtime evidence/],
   ["static-only evidence", (f) => { f.evidence.level = "S1"; }, /VERIFIED runtime evidence/],

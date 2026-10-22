@@ -7,13 +7,24 @@ Static site. `build.mjs` reads the cheat docs and writes `dist/`.
 ## Build
 
 ```sh
+git clone --branch guilty-codes-delivery --single-branch \
+  https://github.com/devin-thomas/retro-graphics-research.git /path/to/cheat-docs
+export RETRO_REPO=/path/to/cheat-docs
 npm install
-npm test             # isolated adapter checks; set RETRO_REPO for legacy build regression
+npm test             # adapter checks and full source-catalog regression
 npm run build        # writes dist/
 npm run deploy       # build, then wrangler pages deploy (project: guiltycodes)
 ```
 
 The source docs are read from `RETRO_REPO=/path/to/cheat-docs` or `node build.mjs --source /path/to/cheat-docs`. They are only read.
+
+Use the published research branch `guilty-codes-delivery` for the complete
+feature catalog. The research repository's `main` branch does not contain the
+required ggmod source and accepted module catalog. Research commit
+`33eb61427d11d3416ffc5c9dc27785fcfbe340bf` is the precursor baseline, rather than
+the complete release. Exact accepted reference: `ROOT-WILL-PIN-FINAL-SOURCE-COMMIT`.
+Each published manifest also pins its own evidence and artifact source revision;
+the build verifies those pins without requiring a separate source lockfile.
 
 First deploy: `npx wrangler login`, then `npx wrangler pages project create guiltycodes --production-branch main`. With more than one Cloudflare account, set `CLOUDFLARE_ACCOUNT_ID`.
 

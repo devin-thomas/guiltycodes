@@ -82,6 +82,7 @@ export function loadCatalog(repo, releases) {
       list(entry.dependencies, `${id}.dependencies`);
       list(entry.conflicts, `${id}.conflicts`);
       if (entry.compatibilityNotes !== undefined) list(entry.compatibilityNotes, `${id}.compatibilityNotes`);
+      if (entry.instructions !== undefined) list(entry.instructions, `${id}.instructions`, { nonempty: true });
       for (const key of ["enable", "disable", "reset", "persistence"]) text(entry.lifecycle?.[key], `${id}.lifecycle.${key}`);
       let pnach = null;
       let artifact = null;
