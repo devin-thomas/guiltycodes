@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "Guilty Codes: cheat codes for the Guilty Gear PS2 games",
   "scripts": {
+    "test": "node --test",
     "build": "node build.mjs",
     "deploy": "node build.mjs && wrangler pages deploy dist --project-name guiltycodes --branch main"
   },

@@ -8,6 +8,7 @@ Static site. `build.mjs` reads the cheat docs and writes `dist/`.
 
 ```sh
 npm install
+npm test             # isolated adapter checks; set RETRO_REPO for legacy build regression
 npm run build        # writes dist/
 npm run deploy       # build, then wrangler pages deploy (project: guiltycodes)
 ```
@@ -39,6 +40,13 @@ git tag v2026.10.19 && git push origin v2026.10.19
 | Native unlock methods, stage tables, test logs | the same docs, extracted by heading or table |
 
 A re-run picks up new codes: every `[section]` in a pnach becomes a code page. The build stops with an error when a pnach section has no registry or matrix row, when the registry and pnach raw codes differ, or when a release identity (serial, CRC) does not match the docs.
+
+New native tips, simple codes, and complete compiled modules use the explicit
+[evidence-pinned feature catalog](CATALOG.md). Drafts stay out of the public
+model. Runtime evidence, source revision, release identity, checksums, controls,
+dependencies, conflicts, and recovery instructions are validated before a build
+replaces the previous output. Feature pages and downloadable patch sections
+are counted separately; modules retain their complete download structure.
 
 Statuses come from the docs' own tables. Releases tested only by prose (FAMILY.md) are mapped to their table rows in `build/data.mjs`; a code without a row is INFERRED.
 

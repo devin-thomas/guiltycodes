@@ -2,6 +2,7 @@
 import { esc, md, mdInline, tableToMd, stripMd, slugify, section, between, cleanMd, parseTables } from "./lib.mjs";
 import { STATUS_ORDER } from "./data.mjs";
 import { siGithub, siX } from "simple-icons";
+import { FEATURE_CATEGORIES } from "./catalog.mjs";
 
 const cls = (s) => s.toLowerCase().replace(/\s+/g, "-");
 export const badge = (s) => `<span class="st st-${cls(s)}">${esc(s)}</span>`;
@@ -19,7 +20,7 @@ export function gauge(counts, total) {
   return `<span class="gauge" role="img" aria-label="${v} of ${total} verified"><span class="gfill" style="width:${pct}%"></span><span class="gtxt">${v}/${total}</span></span>`;
 }
 
-const GROUP_ORDER = ["Everything", "Characters and modes", "EX characters", "Gold, black and SP colours", "Progress", "Stages", "Passwords", "lee4, 2014", "lee4, 2009 (superseded)"];
+const GROUP_ORDER = ["Everything", "Characters and modes", "EX characters", "Gold, black and SP colours", "Progress", "Stages", "Passwords", "lee4, 2014", "lee4, 2009 (superseded)", ...FEATURE_CATEGORIES];
 
 // ---------- 88x31 button badges ----------
 function button(top, bottom, a, b, href, label) {
@@ -133,7 +134,8 @@ function identBox(r) {
     ["Serial", esc(r.serial)],
     ["Version", esc(r.version)],
     ["PCSX2 CRC", `<code>${esc(r.crc)}</code>`],
-    ["Codes", r.codes.length ? `${r.codes.length} ${gauge(r.counts, r.codes.length)}` : "none"],
+    ["Feature pages", r.codes.length ? `${r.codes.length} ${gauge(r.counts, r.codes.length)}` : "none"],
+    ["Downloadable patch sections", r.patchSections ?? 0],
   ];
   const strip = `<div class="tablewrap"><table class="grid identstrip"><thead><tr>${rows.map(([k]) => `<th>${k}</th>`).join("")}</tr></thead><tbody><tr>${rows.map(([k, v]) => `<td data-k="${k}">${v}</td>`).join("")}</tr></tbody></table></div>`;
   const hashes = [
@@ -169,9 +171,9 @@ export function homePage(site) {
     .map(({ r, c }) => `<tr><td><a href="${c.url}">${esc(r.game.title)}</a></td><td>${esc(r.label)} <small>${esc(r.serial)}</small></td><td>${badge(c.status)}</td></tr>`)
     .join("");
   const body = `${pageTitle("Guilty Gear PS2 cheat codes")}
-<div class="hero box"><div class="boxin"><p class="lead">${totalCodes} codes for ${site.releases.filter((r) => r.codes.length).length} releases. ${counts.VERIFIED} verified in PCSX2.</p>
+<div class="hero box"><div class="boxin"><p class="lead">${totalCodes} feature pages for ${site.releases.filter((r) => r.codes.length).length} releases. ${counts.VERIFIED} verified in PCSX2. ${site.releases.reduce((n, r) => n + r.patchSections, 0)} downloadable patch sections.</p>
 <form class="bigsearch" action="/search/" role="search"><label class="sr" for="hq">Search codes</label><input id="hq" name="q" type="search" placeholder="Search codes, e.g. Kliff, gold, stage" autocomplete="off"><button type="submit">Search</button></form></div></div>
-${box("Games", `<div class="tablewrap"><table class="grid"><thead><tr><th>Game</th><th>Releases</th><th class="num">Codes</th><th>Verified</th></tr></thead><tbody>${rows}</tbody></table></div>`)}
+${box("Games", `<div class="tablewrap"><table class="grid"><thead><tr><th>Game</th><th>Releases</th><th class="num">Features</th><th>Verified</th></tr></thead><tbody>${rows}</tbody></table></div>`)}
 ${box("Unlock everything", `<div class="tablewrap"><table class="grid"><thead><tr><th>Game</th><th>Release</th><th>Status</th></tr></thead><tbody>${ue}</tbody></table></div>`)}
 ${box("Downloads", `<p><a href="/downloads/">Every .pnach file</a>, one per release, or <a href="/downloads/${ZIP}" download>all of them in one zip</a>.</p>`)}
 ${box("Status key", statusKey(shared))}`;
@@ -187,7 +189,7 @@ function statusKey(shared) {
 export function gamesIndex(site) {
   const body = `${pageTitle("Games")}${box(
     "All games",
-    `<div class="tablewrap"><table class="grid"><thead><tr><th>Release</th><th>Region</th><th class="wide">Serial</th><th class="wide">CRC</th><th class="num">Codes</th><th>Verified</th></tr></thead><tbody>${site.games
+    `<div class="tablewrap"><table class="grid"><thead><tr><th>Release</th><th>Region</th><th class="wide">Serial</th><th class="wide">CRC</th><th class="num">Features</th><th>Verified</th></tr></thead><tbody>${site.games
       .map(
         (g) =>
           `<tr class="grp"><td colspan="6"><a href="/games/${g.slug}/">${esc(g.title)}</a></td></tr>` +
@@ -209,14 +211,14 @@ export function gamePage(g, site) {
     .join("");
   const body = `${pageTitle(g.title)}${box(
     "Releases",
-    `<div class="tablewrap"><table class="grid"><thead><tr><th>Release</th><th>Region</th><th>Serial</th><th>Version</th><th>CRC</th><th class="num">Codes</th><th>Verified</th></tr></thead><tbody>${rows}</tbody></table></div>`,
+    `<div class="tablewrap"><table class="grid"><thead><tr><th>Release</th><th>Region</th><th>Serial</th><th>Version</th><th>CRC</th><th class="num">Features</th><th>Verified</th></tr></thead><tbody>${rows}</tbody></table></div>`,
   )}`;
   return shell({ title: `${g.title} cheats | Guilty Codes`, desc: `Cheat codes for ${g.title}, by release.`, site, body, crumbs: [{ label: "Games", href: "/games/" }, { label: g.title, game: g.id }] });
 }
 
 function codeTable(r) {
   const groups = GROUP_ORDER.filter((gname) => r.codes.some((c) => c.group === gname));
-  const head = `<thead><tr><th>Code</th><th class="hide-sm">Effect</th><th>Status</th><th class="hide-sm">Level</th></tr></thead>`;
+  const head = `<thead><tr><th>Feature</th><th class="hide-sm">Effect</th><th>Status</th><th class="hide-sm">Level</th></tr></thead>`;
   const rows = groups
     .map((gname) => {
       const cs = r.codes.filter((c) => c.group === gname);
@@ -256,7 +258,7 @@ export function releasePage(r, site) {
   }`;
   return shell({
     title: `${r.game.title} ${r.label} (${r.serial}) cheats | Guilty Codes`,
-    desc: `${r.codes.length} codes for ${r.game.title}, ${r.region}, ${r.serial}, CRC ${r.crc}.`,
+    desc: `${r.codes.length} feature pages for ${r.game.title}, ${r.region}, ${r.serial}, CRC ${r.crc}.`,
     site,
     body,
     crumbs: [{ label: "Games", href: "/games/" }, { label: r.game.title, href: `/games/${r.game.slug}/`, game: r.game.id }, { label: `${r.label} ${r.serial}` }],
@@ -264,16 +266,16 @@ export function releasePage(r, site) {
 }
 
 export function sheetPage(r, site) {
-  const groups = GROUP_ORDER.filter((gname) => r.codes.some((c) => c.group === gname));
+  const groups = GROUP_ORDER.filter((gname) => r.codes.some((c) => c.group === gname && c.raw.length));
   const text = groups
     .map((gname) => {
-      const cs = r.codes.filter((c) => c.group === gname);
+      const cs = r.codes.filter((c) => c.group === gname && c.raw.length);
       return `== ${gname.toUpperCase()} ==\n\n` + cs.map((c) => `${c.title}  [${c.status}]\n${c.effect ? "  " + shortEffect(c.effect) + "\n" : ""}${c.raw.map((l) => "  " + l).join("\n")}`).join("\n\n");
     })
     .join("\n\n\n");
   const head = `${r.game.title}: ${r.label}\n${r.region}, ${r.serial}, CRC ${r.crc}\n${"-".repeat(60)}\n\n`;
-  const body = `${relHeader(r, "sheet/")}<div class="boxcopy"><button class="copy" type="button" data-target="sheettext">Copy all</button><pre class="code sheet" id="sheettext" tabindex="0">${esc(head + text)}\n</pre></div>`;
-  return shell({ title: `${r.game.title} ${r.label} raw code sheet | Guilty Codes`, desc: `All ${r.codes.length} raw codes for ${r.game.title} ${r.serial} on one page.`, site, body,
+  const body = `${relHeader(r, "sheet/")}${r.codes.some((c) => c.kind === "compiled-module" || c.kind === "native-tip") ? "<p>Compiled modules and native tips have their own feature pages. Use their instructions and complete downloads.</p>" : ""}<div class="boxcopy"><button class="copy" type="button" data-target="sheettext">Copy all</button><pre class="code sheet" id="sheettext" tabindex="0">${esc(head + text)}\n</pre></div>`;
+  return shell({ title: `${r.game.title} ${r.label} raw code sheet | Guilty Codes`, desc: `${r.codes.filter((code) => code.raw.length).length} raw codes for ${r.game.title} ${r.serial} on one page.`, site, body,
     crumbs: [{ label: "Games", href: "/games/" }, { label: r.game.title, href: `/games/${r.game.slug}/`, game: r.game.id }, { label: r.label, href: r.url }, { label: "Raw sheet" }] });
 }
 
@@ -281,6 +283,22 @@ export function sheetPage(r, site) {
 function priorArtFor(c, site) {
   const m = site.priorMap.get(c.title);
   return m && c.release.hasLee4 ? `<p>Prior art: lee4, 2014 (<a href="${c.release.url}prior-art/">lee4 codes</a>). ${mdInline(m.replace(/\n/g, " "))}</p>` : "";
+}
+
+function featureDetails(c) {
+  if (!c.kind) return "";
+  const refs = (ids) => ids.length ? ids.map((id) => {
+    const target = c.release.codes.find((code) => code.id === id);
+    return `<a href="${esc(target.url)}">${esc(target.title)}</a>`;
+  }).join(", ") : "None";
+  const rows = [
+    ["Kind", c.kind.replace(/-/g, " ")],
+    ["Controls", c.controls.join("; ")],
+    ...["enable", "disable", "reset", "persistence"].map((key) => [key[0].toUpperCase() + key.slice(1), c.lifecycle[key]]),
+  ];
+  const provenance = `https://github.com/devin-thomas/retro-graphics-research/blob/${c.source.revision}/${c.source.path.split("/").map(encodeURIComponent).join("/")}`;
+  return box("Use and recovery", `<table class="kv">${rows.map(([key, value]) => `<tr><th>${esc(key)}</th><td>${esc(value)}</td></tr>`).join("")}<tr><th>Requires</th><td>${refs(c.dependencies)}</td></tr><tr><th>Conflicts with</th><td>${refs(c.conflicts)}</td></tr></table>${c.compatibilityNotes.length ? `<ul>${c.compatibilityNotes.map((note) => `<li>${esc(note)}</li>`).join("")}</ul>` : ""}`)
+    + box("Source", `<p><a class="ext" rel="noopener noreferrer" href="${provenance}">Pinned evidence</a>, revision <code>${esc(c.source.revision)}</code>.</p><p>Evidence SHA-256: <code class="hash">${esc(c.source.sha256)}</code></p>`);
 }
 
 export function codePage(c, site, idx) {
@@ -298,8 +316,10 @@ export function codePage(c, site, idx) {
     ["Evidence", level(c.level)],
     ["Real hardware", badge(c.hardware)],
   ];
-  const rawBlock = `<div class="boxcopy"><button class="copy" type="button" data-target="raw">Copy</button><pre class="code" id="raw" tabindex="0">${esc(c.raw.join("\n"))}</pre></div>${c.inputNote ? `<p>${esc(c.inputNote)}</p>` : ""}`;
-  const pnachBlock = c.pnach
+  const rawBlock = c.kind === "native-tip" ? `<ol>${c.instructions.map((instruction) => `<li>${esc(instruction)}</li>`).join("")}</ol>` : c.kind === "compiled-module" ? `<p>Install the complete module using the download below. It contains ${c.artifact.sectionCount} patch sections.</p>` : `<div class="boxcopy"><button class="copy" type="button" data-target="raw">Copy</button><pre class="code" id="raw" tabindex="0">${esc(c.raw.join("\n"))}</pre></div>${c.inputNote ? `<p>${esc(c.inputNote)}</p>` : ""}`;
+  const pnachBlock = c.artifact
+    ? `<p><a class="dlbtn" href="/pnach/${esc(c.artifact.file)}" download>Download ${esc(c.artifact.file)}</a></p><p>${c.artifact.sectionCount} patch sections. SHA-256: <code class="hash">${esc(c.artifact.sha256)}</code></p>`
+    : c.pnach
     ? `<div class="boxcopy"><button class="copy" type="button" data-target="pn">Copy</button><pre class="code" id="pn" tabindex="0">${esc(c.pnach)}</pre></div>${r.pnachFile ? `<p><a href="/pnach/${esc(r.pnachFile)}" download>${esc(r.pnachFile)}</a>, all sections</p>` : ""}`
     : `<p>Not a memory write.</p>`;
   const pub = c.published;
@@ -310,7 +330,7 @@ export function codePage(c, site, idx) {
   const checked = c.checked ? `<p>${esc(sentence(c.checked))}</p>` : `<p>No individual test run.</p>`;
   const nav = `<nav class="pn"><span>${idx.prev ? `<a href="${idx.prev.url}" rel="prev">&laquo; ${esc(shortTitle(idx.prev))}</a>` : ""}</span><span>${idx.next ? `<a href="${idx.next.url}" rel="next">${esc(shortTitle(idx.next))} &raquo;</a>` : ""}</span></nav>`;
   const body = `${pageTitle(c.title)}${warn}<table class="kv meta">${rows.map(([k, v]) => `<tr><th>${k}</th><td>${v}</td></tr>`).join("")}</table>
-${box("Raw code", rawBlock)}${box("PCSX2", pnachBlock)}${box("Effect", `<p>${esc(c.effect)}</p>`)}${box("Test result", checked)}${box("Credit", credit)}${nav}`;
+${box(c.kind === "native-tip" ? "Instructions" : c.kind === "compiled-module" ? "Compiled module" : "Raw code", rawBlock)}${c.kind === "native-tip" ? "" : box("PCSX2", pnachBlock)}${box("Effect", `<p>${esc(c.effect)}</p>`)}${box("Test result", checked)}${featureDetails(c)}${box("Credit", credit)}${nav}`;
   return shell({
     title: `${c.title} | ${r.game.title} ${r.label} | Guilty Codes`,
     desc: `${c.title}: ${shortEffect(c.effect)} ${r.serial}, CRC ${r.crc}.`,
@@ -437,11 +457,11 @@ ${box("Both versions tested", prose(md(tableToMd(s.lee4Tests.header, s.lee4Tests
 export const ZIP = "guiltycodes-pnach.zip";
 export function downloadsPage(site, files) {
   const rows = files
-    .map((f) => `<tr><td><a href="${f.release.url}">${esc(f.release.game.title)}</a></td><td>${esc(f.release.label)}</td><td class="wide">${esc(f.release.serial)}</td><td class="wide">${esc(f.release.crc)}</td><td class="num">${f.release.codes.length}</td><td><a href="/pnach/${esc(f.file)}" download>${esc(f.file)}</a></td></tr>`)
+    .map((f) => `<tr><td><a href="${f.feature?.url ?? f.release.url}">${esc(f.feature?.title ?? f.release.game.title)}</a></td><td>${esc(f.release.label)}</td><td class="wide">${esc(f.release.serial)}</td><td class="wide">${esc(f.release.crc)}</td><td class="num">${f.sectionCount}</td><td><a href="/pnach/${esc(f.file)}" download>${esc(f.file)}</a></td></tr>`)
     .join("");
   const body = `${pageTitle("Downloads", "PCSX2 cheat files. Put one in the <code>cheats</code> folder and turn on cheats; see <a href=\"/how-to/\">How to use</a>.")}
 ${files.length ? `<p class="dl"><a class="dlbtn" href="/downloads/${ZIP}" download>Download all (${files.length} files, zip)</a></p>
-${box("Files", `<div class="tablewrap"><table class="grid"><thead><tr><th>Game</th><th>Release</th><th class="wide">Serial</th><th class="wide">CRC</th><th class="num">Codes</th><th>File</th></tr></thead><tbody>${rows}</tbody></table></div>`)}` : box("Files", "<p>No cheat files in this build.</p>")}
+${box("Files", `<div class="tablewrap"><table class="grid"><thead><tr><th>Game or feature</th><th>Release</th><th class="wide">Serial</th><th class="wide">CRC</th><th class="num">Patch sections</th><th>File</th></tr></thead><tbody>${rows}</tbody></table></div>`)}` : box("Files", "<p>No cheat files in this build.</p>")}
 ${box("GitHub", `<p>Each version is also a <a class="ext" rel="noopener noreferrer" href="https://github.com/devin-thomas/guiltycodes/releases/latest">GitHub release</a> with the same files.</p>`)}`;
   return shell({ title: "Downloads | Guilty Codes", desc: `${files.length} PCSX2 .pnach cheat files for the Guilty Gear PS2 games.`, site, body, crumbs: [{ label: "Downloads" }] });
 }

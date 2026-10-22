@@ -3,6 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
 import YAML from "yaml";
+import { loadCatalog, FEATURE_CATEGORIES } from "./catalog.mjs";
 import { section, between, tableWith, parseTables, tableToMd, stripMd, md, mdInline, parsePnach, regionOf, regionShort, slugify, cleanMd, scrub } from "./lib.mjs";
 
 const argSource = process.argv.includes("--source") ? process.argv[process.argv.indexOf("--source") + 1] : null;
@@ -25,6 +26,7 @@ const GROUPS = [
   "lee4, 2014",
   "lee4, 2009 (superseded)",
   "Passwords",
+  ...FEATURE_CATEGORIES,
 ];
 const groupFor = (t) => {
   if (/^Unlock everything/i.test(t)) return "Everything";
@@ -522,6 +524,15 @@ export function loadSite() {
       unlock: { kind: "taikenban", md: famMaps["Taikenban (trial)"] } });
   }
 
+  // Catalog drafts never enter the public model or the downloads list.
+  const features = loadCatalog(REPO, releases);
+  for (const feature of features) feature.release.codes.push(feature);
+  for (const release of releases) {
+    release.counts = Object.fromEntries(STATUS_ORDER.map((status) => [status, release.codes.filter((code) => code.status === status).length]));
+    release.patchSections = (release.pnachText ? parsePnach(release.pnachText).sections.length : 0)
+      + features.filter((feature) => feature.release === release).reduce((n, feature) => n + (feature.artifact?.sectionCount ?? 0), 0);
+  }
+
   // ----- Games -----
   const gameDefs = [
     { id: "x", title: "Guilty Gear X", short: "X" },
@@ -545,5 +556,5 @@ export function loadSite() {
     verification, testSetup, famMaps, famRows, x2Doc, famDoc, othDoc, acDoc, evidenceLevels: R.reg.evidence_levels,
     claims: R.claims, registryCount: R.count, commit,
   };
-  return { games, releases, shared, GROUPS };
+  return { games, releases, shared, GROUPS, features };
 }

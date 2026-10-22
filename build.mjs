@@ -6,12 +6,15 @@ import { build as esbuild } from "esbuild";
 import { zipSync, strToU8 } from "fflate";
 import { loadSite } from "./build/data.mjs";
 import * as R from "./build/render.mjs";
-import { esc, scrub } from "./build/lib.mjs";
+import { esc, scrub, parsePnach } from "./build/lib.mjs";
+import { FEATURE_CATEGORIES } from "./build/catalog.mjs";
 
 const DIST = path.resolve("dist");
 const ORIGIN = "https://guiltycodes.pages.dev";
-const GROUP_ORDER = ["Everything", "Characters and modes", "EX characters", "Gold, black and SP colours", "Progress", "Stages", "Passwords", "lee4, 2014", "lee4, 2009 (superseded)"];
+const GROUP_ORDER = ["Everything", "Characters and modes", "EX characters", "Gold, black and SP colours", "Progress", "Stages", "Passwords", "lee4, 2014", "lee4, 2009 (superseded)", ...FEATURE_CATEGORIES];
 
+// Validate all source pins before replacing the previous successful build.
+const site = loadSite();
 fs.rmSync(DIST, { recursive: true, force: true });
 const urls = [];
 const put = (url, html) => {
@@ -21,7 +24,6 @@ const put = (url, html) => {
   if (url.endsWith("/")) urls.push(url);
 };
 
-const site = loadSite();
 site.built = new Date().toISOString().slice(0, 10);
 
 // Prior-art bullets from the AC+ doc: code title -> sentence crediting lee4.
@@ -54,13 +56,18 @@ for (const g of site.games) {
     sorted.forEach((c, i) => {
       put(c.url, R.codePage(c, site, { prev: sorted[i - 1], next: sorted[i + 1] }));
       search.push({ t: c.title, g: g.title, r: `${r.label} ${r.serial}`, s: c.status, u: c.url, x: `${c.title} ${c.effect} ${g.title} ${r.label} ${r.serial} ${r.crc} ${c.raw.join(" ")}`.toLowerCase() });
+      if (c.artifact) {
+        fs.mkdirSync(path.join(DIST, "pnach"), { recursive: true });
+        fs.writeFileSync(path.join(DIST, "pnach", c.artifact.file), c.artifact.text);
+        files.push({ ...c.artifact, release: r, feature: c });
+      }
     });
     if (r.pnachText) {
       const clean = scrub(r.pnachText).replace(/\s*\(games\/[^)]*\)/g, "");
       fs.mkdirSync(path.join(DIST, "pnach"), { recursive: true });
       const text = clean.endsWith("\n") ? clean : clean + "\n";
       fs.writeFileSync(path.join(DIST, "pnach", r.pnachFile), text);
-      files.push({ file: r.pnachFile, release: r, text });
+      files.push({ file: r.pnachFile, release: r, text, sectionCount: parsePnach(text).sections.length });
     }
   }
 }
@@ -69,13 +76,13 @@ put("/search.json", JSON.stringify(search));
 // ---- downloads: /downloads/, the zip, and the committed pnach/ folder the GitHub release ships ----
 files.sort((a, b) => a.release.game.title.localeCompare(b.release.game.title) || a.file.localeCompare(b.file));
 put("/downloads/", R.downloadsPage(site, files));
-fs.writeFileSync(path.join(DIST, "downloads", R.ZIP), zipSync(Object.fromEntries(files.map((f) => [f.file, strToU8(f.text)])), { mtime: new Date("2000-01-01") }));
+fs.writeFileSync(path.join(DIST, "downloads", R.ZIP), zipSync(Object.fromEntries(files.map((f) => [f.file, typeof f.text === "string" ? strToU8(f.text) : f.text])), { mtime: new Date("2000-01-01") }));
 fs.rmSync("pnach", { recursive: true, force: true });
 fs.mkdirSync("pnach");
 for (const f of files) fs.writeFileSync(path.join("pnach", f.file), f.text);
 fs.writeFileSync(
   path.join("pnach", "index.json"),
-  JSON.stringify(files.map((f) => ({ file: f.file, game: f.release.game.title, release: f.release.label, serial: f.release.serial, crc: f.release.crc, codes: f.release.codes.length })), null, 2) + "\n",
+  JSON.stringify(files.map((f) => ({ file: f.file, game: f.release.game.title, release: f.release.label, serial: f.release.serial, crc: f.release.crc, featureId: f.feature?.id ?? null, featurePages: f.feature ? 1 : f.release.codes.filter((code) => !code.kind).length, patchSections: f.sectionCount, ...(f.sha256 ? { sha256: f.sha256 } : {}) })), null, 2) + "\n",
 );
 
 // ---- assets ----
@@ -103,4 +110,4 @@ fs.writeFileSync(
 );
 
 const codes = site.releases.reduce((n, r) => n + r.codes.length, 0);
-console.log(`built ${urls.length} pages, ${codes} codes, ${site.releases.length} releases -> ${DIST}`);
+console.log(`built ${urls.length} pages, ${codes} feature pages, ${files.reduce((n, file) => n + file.sectionCount, 0)} downloadable patch sections, ${site.releases.length} releases -> ${DIST}`);
