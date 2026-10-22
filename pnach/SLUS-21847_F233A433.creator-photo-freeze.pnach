@@ -1,0 +1,11 @@
+gametitle=Guilty Gear XX Accent Core Plus (NTSC-U) [SLUS-21847] (F233A433)
+comment=Scoped S2 creator features. Read catalog evidence and dependencies before enabling.
+comment=Reboot to unload code patches and restore camera state.
+
+[Creator: Photo freeze (hold P2 Select to play)]
+author=retro-graphics-research
+description=Freezes the fight on the current frame with no pause menu; holding P2 Select plays at normal speed, a tap steps a few frames. With the camera engine on, the camera codes keep working while frozen.
+patch=1,EE,703C6834,extended,00000001
+patch=1,EE,203E8658,extended,00000002
+patch=1,EE,E001FFFE,extended,0045839C
+patch=1,EE,203E8658,extended,00000001

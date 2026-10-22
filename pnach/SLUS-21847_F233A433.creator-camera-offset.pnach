@@ -1,0 +1,8 @@
+gametitle=Guilty Gear XX Accent Core Plus (NTSC-U) [SLUS-21847] (F233A433)
+comment=Scoped S2 creator features. Read catalog evidence and dependencies before enabling.
+comment=Reboot to unload code patches and restore camera state.
+
+[Creator: Camera offset (edit value)]
+author=retro-graphics-research
+description=Moves the view by a fixed number of pixels; camera-sensitive moves can also change. Value = PANY (high 16 bits) : PANX (low 16 bits), signed pixels; default X -120, Y 0.
+patch=1,EE,201D13F4,extended,0000FF88

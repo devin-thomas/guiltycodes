@@ -1,0 +1,10 @@
+gametitle=Guilty Gear XX Accent Core Plus (NTSC-U) [SLUS-21847] (F233A433)
+comment=games/backport/GLOBAL-460.md. Tested in PCSX2 on the US disc (2026-10-20). US only: the address is the NTSC-U ELF's.
+
+[Life 460: game-wide max life table of +R (520/460/400/340)]
+author=retro-graphics-research
+description=The LIFE option's table is four words of initialised data at 0x3C6848 (480/420/360/300, indexed by the option byte 0x34E8C4). Its only two readers, 0x224F70 and 0x225110, copy the chosen word into MaxVital (0x3C6BA0), and nothing else writes MaxVital. This writes +R's table (0x971F70: 520/460/400/340) over it, so every mode that follows the game's own max life gets +R's value at every LIFE setting. Default LIFE gives 460 for both players. Applied every vsync; switch it on before booting the game (Survival and M.O.M. seed their carried life at mode entry from the then-current max). Mission lives are authored values and do not follow it: see GLOBAL-460.md.
+patch=1,EE,203C6848,extended,00000208
+patch=1,EE,203C684C,extended,000001CC
+patch=1,EE,203C6850,extended,00000190
+patch=1,EE,203C6854,extended,00000154

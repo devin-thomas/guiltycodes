@@ -1,0 +1,8 @@
+gametitle=Guilty Gear XX Accent Core Plus (NTSC-U) [SLUS-21847] (F233A433)
+comment=Scoped S2 creator features. Read catalog evidence and dependencies before enabling.
+comment=Reboot to unload code patches and restore camera state.
+
+[Creator: Hitbox display (debug COLLI)]
+author=retro-graphics-research
+description=Turns on the game's own collision-box view, a leftover of the unreachable debug menu (item "COLLI"). Boxes are drawn on both fighters and on objects (projectiles, summons).
+patch=1,EE,20331EAC,extended,00000001

@@ -1,0 +1,8 @@
+gametitle=Guilty Gear XX Accent Core Plus (NTSC-U) [SLUS-21847] (F233A433)
+comment=Scoped S2 creator features. Read catalog evidence and dependencies before enabling.
+comment=Reboot to unload code patches and restore camera state.
+
+[Creator: Camera zoom (edit value)]
+author=retro-graphics-research
+description=Scales the view; camera-sensitive moves can also change. Value = zoom change in 1/1000, -500 ... +2000. Default +500 = 1.5x closer.
+patch=1,EE,101D13F8,extended,000001F4

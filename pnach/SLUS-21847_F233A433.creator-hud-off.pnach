@@ -1,0 +1,10 @@
+gametitle=Guilty Gear XX Accent Core Plus (NTSC-U) [SLUS-21847] (F233A433)
+comment=Scoped S2 creator features. Read catalog evidence and dependencies before enabling.
+comment=Reboot to unload code patches and restore camera state.
+
+[Creator: HUD off (all)]
+author=retro-graphics-research
+description=No life bars, tension, burst, portraits, names, timer, combo counter, round-win marks or state text (COUNTER and the like), including Training text. Sampled end-state fight/RNG RAM matched the tested control.
+patch=1,EE,2024975C,extended,10000010
+patch=1,EE,2012E3A0,extended,00000000
+patch=1,EE,20279AE4,extended,00000000

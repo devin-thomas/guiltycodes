@@ -1,0 +1,23 @@
+gametitle=Guilty Gear XX Accent Core Plus (NTSC-U) [SLUS-21847] (F233A433)
+comment=Scoped S2 creator features. Read catalog evidence and dependencies before enabling.
+comment=Reboot to unload code patches and restore camera state.
+
+[Creator: Camera pan on P1 right stick]
+author=retro-graphics-research
+description=P1 right stick changes the camera offset by 2 px/frame beyond 0x28 from center and 4 beyond 0x60. The offset stays when the stick returns to center. No reset control is implemented.
+patch=1,EE,E10100A8,extended,3045811E
+patch=1,EE,30200002,extended,001D13F4
+patch=1,EE,E1010058,extended,2045811E
+patch=1,EE,30300002,extended,001D13F4
+patch=1,EE,E10100E0,extended,3045811E
+patch=1,EE,30200002,extended,001D13F4
+patch=1,EE,E1010020,extended,2045811E
+patch=1,EE,30300002,extended,001D13F4
+patch=1,EE,E10100A8,extended,3045811F
+patch=1,EE,30200002,extended,001D13F6
+patch=1,EE,E1010058,extended,2045811F
+patch=1,EE,30300002,extended,001D13F6
+patch=1,EE,E10100E0,extended,3045811F
+patch=1,EE,30200002,extended,001D13F6
+patch=1,EE,E1010020,extended,2045811F
+patch=1,EE,30300002,extended,001D13F6

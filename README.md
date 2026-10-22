@@ -22,7 +22,7 @@ Use the published research branch `guilty-codes-delivery` for the complete
 feature catalog. The research repository's `main` branch does not contain the
 required ggmod source and accepted module catalog. Research commit
 `33eb61427d11d3416ffc5c9dc27785fcfbe340bf` is the precursor baseline, rather than
-the complete release. Exact accepted reference: `ROOT-WILL-PIN-FINAL-SOURCE-COMMIT`.
+the complete release. Exact accepted reference: `830db45434311fc7fdd8954e583bd400b3e2c49c`.
 Each published manifest also pins its own evidence and artifact source revision;
 the build verifies those pins without requiring a separate source lockfile.
 

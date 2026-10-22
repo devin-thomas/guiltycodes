@@ -1,0 +1,5 @@
+gametitle=SLUS-21847 (F233A433)
+
+[Extra Menu access without setting the unlock flag]
+patch=1,EE,201D5B88,extended,03E00008
+patch=1,EE,201D5B8C,extended,24020001

@@ -1,0 +1,9 @@
+gametitle=Guilty Gear XX Accent Core Plus (NTSC-U) [SLUS-21847] (F233A433)
+comment=Scoped S2 creator features. Read catalog evidence and dependencies before enabling.
+comment=Reboot to unload code patches and restore camera state.
+
+[Creator: Background off - green screen]
+author=retro-graphics-research
+description=Stage layers are not drawn and the frame is cleared to pure green (0, 255, 0) for keying.
+patch=1,EE,2024BAE8,extended,1000019B
+patch=1,EE,2032BE44,extended,0000FF00
