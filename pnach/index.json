@@ -99,7 +99,7 @@
     "featureId": "cpu-modes-us",
     "featurePages": 1,
     "patchSections": 1,
-    "sha256": "ab99cff6ef98dc4f6d6d2b792cf5672167315e3fe62b07e2883229206ba4cb48"
+    "sha256": "05de263945b40fd34f8a7a912590417f8bafdea9c74b1fb8c615de683708ba9c"
   },
   {
     "file": "SLUS-21847_F233A433.cpu-survival-us.pnach",
@@ -243,6 +243,28 @@
     "featurePages": 1,
     "patchSections": 1,
     "sha256": "ca81738ea84df21094a54ab38f754373020fbad56c0f247e80f89aadf4ce3ba8"
+  },
+  {
+    "file": "SLUS-21847_F233A433.survival-continue-us.pnach",
+    "game": "Guilty Gear XX Accent Core Plus",
+    "release": "US",
+    "serial": "SLUS-21847",
+    "crc": "F233A433",
+    "featureId": "survival-continue-us",
+    "featurePages": 1,
+    "patchSections": 1,
+    "sha256": "5bc1f23091e649c9d7419bb9fc041fd55a63832ad05b829167d061edc3d96cb2"
+  },
+  {
+    "file": "SLUS-21847_F233A433.survival-player-forms-us.pnach",
+    "game": "Guilty Gear XX Accent Core Plus",
+    "release": "US",
+    "serial": "SLUS-21847",
+    "crc": "F233A433",
+    "featureId": "survival-player-forms-us",
+    "featurePages": 1,
+    "patchSections": 1,
+    "sha256": "473255a60361b7cb5b0dae0670986f4da4f5f982013f311460e392940f01a0fb"
   },
   {
     "file": "SLUS-21847_F233A433.survival-practice-us.pnach",

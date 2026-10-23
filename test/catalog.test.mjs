@@ -394,7 +394,7 @@ test("existing catalog still builds with every code page and original release fi
       new URL(`../dist/games/guilty-gear-xx-accent-core-plus/us-slus-21847/${id}/index.html`, import.meta.url),
       "utf8",
     );
-    assert.match(page, /Properties \/ Patches, enable/);
+    assert.match(page, /Properties (?:\/|&gt;) Patches,? enable/);
     assert.doesNotMatch(page, /Properties \/ Cheats|configured cheats folder|Settings \/ Folders \/ Cheats|Reload cheats/);
   }
   assert.match(howTo, /Legacy release cheat files/);
@@ -409,6 +409,15 @@ test("existing catalog still builds with every code page and original release fi
   const ac = site.releases.find((release) => release.serial === "SLUS-21847");
   assert.equal(ac.codes.filter((code) => !code.kind).length, 134);
   assert.equal(ac.codes.filter((code) => code.published).length, 16);
+  assert.equal(index.filter((entry) => entry.featureId !== null).length, 18);
+  for (const [id, hash] of [
+    ["cpu-modes-us", "05de263945b40fd34f8a7a912590417f8bafdea9c74b1fb8c615de683708ba9c"],
+    ["survival-continue-us", "5bc1f23091e649c9d7419bb9fc041fd55a63832ad05b829167d061edc3d96cb2"],
+    ["survival-player-forms-us", "473255a60361b7cb5b0dae0670986f4da4f5f982013f311460e392940f01a0fb"],
+  ]) {
+    const feature = ac.codes.find((code) => code.id === id);
+    assert.equal(feature.artifact.sha256, hash, `${id} uses its accepted artifact`);
+  }
   assert.equal(index.find((entry) => entry.file === "F233A433.pnach").patchSections, 118);
   assert.equal(index.find((entry) => entry.file === "F233A433.pnach").featurePages, 134);
 
