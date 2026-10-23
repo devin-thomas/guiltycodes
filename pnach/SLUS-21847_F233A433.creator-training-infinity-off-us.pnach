@@ -1,0 +1,5 @@
+gametitle=SLUS-21847 (F233A433)
+
+[Hide Training infinity symbol]
+patch=1,EE,2024785C,extended,00000000
+patch=1,EE,20247884,extended,00000000

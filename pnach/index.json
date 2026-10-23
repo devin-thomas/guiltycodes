@@ -190,6 +190,17 @@
     "sha256": "76cf279823f92ff7f059038b5ced1d89458ecc2f4095b4fddb377c5355e878f8"
   },
   {
+    "file": "SLUS-21847_F233A433.creator-p1-hud-off-us.pnach",
+    "game": "Guilty Gear XX Accent Core Plus",
+    "release": "US",
+    "serial": "SLUS-21847",
+    "crc": "F233A433",
+    "featureId": "creator-p1-hud-off-us",
+    "featurePages": 1,
+    "patchSections": 1,
+    "sha256": "cc9d5065fae4ac5d17d9ba6bfce8ffae3d02362d9a689433671b0b9a940d550f"
+  },
+  {
     "file": "SLUS-21847_F233A433.creator-photo-freeze.pnach",
     "game": "Guilty Gear XX Accent Core Plus",
     "release": "US",
@@ -199,6 +210,17 @@
     "featurePages": 1,
     "patchSections": 1,
     "sha256": "41c9382c46ef2d39e9700eed57e180e89acc2d121f9369e283b0f026c4959e7b"
+  },
+  {
+    "file": "SLUS-21847_F233A433.creator-training-infinity-off-us.pnach",
+    "game": "Guilty Gear XX Accent Core Plus",
+    "release": "US",
+    "serial": "SLUS-21847",
+    "crc": "F233A433",
+    "featureId": "creator-training-infinity-off-us",
+    "featurePages": 1,
+    "patchSections": 1,
+    "sha256": "3696d6ca98d5e9b267b2aa86cbce733ba694ad3ec325ea990093f7098ef360d7"
   },
   {
     "file": "SLUS-21847_F233A433.extra-menu-access-us.pnach",
