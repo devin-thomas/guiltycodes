@@ -1,0 +1,8 @@
+node_modules/
+dist/
+pnach/
+CONTEXT.md
+src/site.css
+README.md
+CATALOG.md
+package-lock.json

@@ -9,16 +9,25 @@
   },
   "type": "module",
   "dependencies": {
-    "@fontsource/anton": "^5.3.0",
-    "@uppercut-labs/dreamcast-backgrounds": "^0.1.0",
-    "esbuild": "^0.28.2",
-    "fflate": "^0.8.2",
-    "marked": "^18.1.1",
-    "yaml": "^2.9.1"
+    "@fontsource/anton": "5.3.0",
+    "@uppercut-labs/dreamcast-backgrounds": "0.1.0",
+    "esbuild": "0.28.2",
+    "fflate": "0.8.2",
+    "marked": "18.1.1",
+    "yaml": "2.9.1"
   },
   "private": true,
   "devDependencies": {
-    "simple-icons": "^16.35.0",
-    "wrangler": "^4.152.0"
+    "@types/node": "22.18.10",
+    "@types/three": "0.183.1",
+    "eslint": "9.39.1",
+    "prettier": "3.6.2",
+    "simple-icons": "16.35.0",
+    "typescript": "5.9.3",
+    "typescript-eslint": "8.46.2",
+    "wrangler": "4.152.0"
+  },
+  "engines": {
+    "node": ">=22.18.0"
   }
 }
