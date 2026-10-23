@@ -21,11 +21,15 @@ The source docs are read from `RETRO_REPO=/path/to/cheat-docs` or `node build.ts
 Use the published research branch `continuation-forms-release` for the complete
 current feature catalog. The research repository's `main` branch does not
 contain the accepted module catalog. Current source reference:
-`e39eb6eb0115cc6606218e34021dead5f29ffe21`.
+`f19c337ba3fe28cbb026e4efb738eefac347f609`.
 
 This release adds the standalone one-time Survival Continue handoff and a
 zero-based gold-star/CUSTOM timer, updates the combined CPU module with a working
 elapsed clock, and adds native Gold/Black player palette access in Survival.
+Post-release diagnostic coverage now includes a real natural loss after Continue
+and its marked result. Terminal clear remains explicitly unqualified. Random
+rewards can natively choose Time Traveling, so current level and highest credited
+level are reported separately. These additions do not change the PNACH bytes.
 The earlier Survival Practice and standalone CPU Survival artifacts remain
 unchanged as legacy choices. CPU v1 personal-run evidence belongs to its old
 artifact, which used the previous timer behavior.
