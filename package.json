@@ -3,9 +3,14 @@
   "version": "1.0.0",
   "description": "Guilty Codes: cheat codes for the Guilty Gear PS2 games",
   "scripts": {
-    "test": "node --test",
-    "build": "node build.mjs",
-    "deploy": "node build.mjs && wrangler pages deploy dist --project-name guiltycodes --branch main"
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint . --max-warnings 0 && node tools/check-style.ts",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "node --test test/*.test.mjs",
+    "check": "npm run typecheck && npm run lint && npm run format:check && npm test",
+    "build": "npm run typecheck && node build.ts",
+    "deploy": "npm run check && npm run build && wrangler pages deploy dist --project-name guiltycodes --branch main"
   },
   "type": "module",
   "dependencies": {

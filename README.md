@@ -2,7 +2,7 @@
 
 Cheat codes for the Guilty Gear PS2 games, in the style of a pre-2009 cheat site. Live at https://guiltycodes.pages.dev.
 
-Static site. `build.mjs` reads the cheat docs and writes `dist/`.
+Static site. `build.ts` reads the cheat docs and writes `dist/`. All first-party build, catalog, render and browser behavior has TypeScript source. Node 22.18.0 or newer runs the build and tests with native type stripping; browsers receive esbuild bundles.
 
 ## Build
 
@@ -10,13 +10,13 @@ Static site. `build.mjs` reads the cheat docs and writes `dist/`.
 git clone --branch guilty-codes-delivery --single-branch \
   https://github.com/devin-thomas/retro-graphics-research.git /path/to/cheat-docs
 export RETRO_REPO=/path/to/cheat-docs
-npm install
-npm test             # adapter checks and full source-catalog regression
+npm ci
+npm run check        # strict compiler, typed lint, house rules, formatter and tests
 npm run build        # writes dist/
 npm run deploy       # build, then wrangler pages deploy (project: guiltycodes)
 ```
 
-The source docs are read from `RETRO_REPO=/path/to/cheat-docs` or `node build.mjs --source /path/to/cheat-docs`. They are only read.
+The source docs are read from `RETRO_REPO=/path/to/cheat-docs` or `node build.ts --source /path/to/cheat-docs`. They are only read.
 
 Use the published research branch `guilty-codes-delivery` for the complete
 feature catalog. The research repository's `main` branch does not contain the
@@ -36,12 +36,11 @@ First deploy: `npx wrangler login`, then `npx wrangler pages project create guil
 
 ## Downloads and releases
 
-The build writes each scrubbed `.pnach` to `dist/pnach/`, a zip of all of them to `dist/downloads/guiltycodes-pnach.zip`, the `/downloads/` page, and a committed copy in `pnach/` (with `pnach/index.json`). Commit `pnach/` after a build that changes it.
+The build writes each scrubbed `.pnach` to `dist/pnach/`, a zip to `dist/downloads/guiltycodes-pnach.zip`, and the `/downloads/` page. Ordinary builds leave the committed release snapshot in `pnach/` unchanged. Updating that snapshot is an explicit release operation: `npm run build -- --write-pnach` also writes `pnach/` and `pnach/index.json`. Review every changed byte before committing a release update.
 
 Feature-page download buttons suggest `SERIAL_CRC.pnach`, the filename PCSX2
 expects. Archive URLs and the all-files zip keep feature-specific names so
-alternative modules remain distinct. Follow the individual feature's setup and
-conflict instructions; do not install the entire zip as one active cheat set.
+alternative modules remain distinct. Selectable feature downloads go in the active PCSX2 data directory's `patches` folder, with their named sections enabled under game Properties > Patches. Use Tools > Open Data Directory to find that directory. Portable example: `<PCSX2 folder>\patches\SLUS-21847_F233A433.pnach`. Legacy release cheat files retain their `cheats` folder and Properties > Cheats instructions. Follow each feature's setup and conflicts; do not install the entire ZIP as one active set. [PCSX2 documents the distinction](https://pcsx2.net/docs/advanced/writing-patches/).
 
 To publish a GitHub release, push a date tag; `.github/workflows/release.yml` attaches every `pnach/*.pnach` and the zip:
 
@@ -70,9 +69,9 @@ dependencies, conflicts, and recovery instructions are validated before a build
 replaces the previous output. Feature pages and downloadable patch sections
 are counted separately; modules retain their complete download structure.
 
-Statuses come from the docs' own tables. Releases tested only by prose (FAMILY.md) are mapped to their table rows in `build/data.mjs`; a code without a row is INFERRED.
+Statuses come from the docs' own tables. Releases tested only by prose (FAMILY.md) are mapped to their table rows in `build/data.ts`; a code without a row is INFERRED.
 
-Left out on purpose: routine and jump-table addresses, script names, evidence-capture paths, and the asset-hash comparison of stage art. The build scrubs them from extracted text (`scrub` in `build/lib.mjs`).
+Left out on purpose: routine and jump-table addresses, script names, evidence-capture paths, and the asset-hash comparison of stage art. The build scrubs them from extracted text (`scrub` in `build/lib.ts`).
 
 No game binaries, extracted assets, or decompilation material are in this repo or on the site.
 
@@ -104,9 +103,19 @@ Uppercut Labs logo (the original brand image), downscaled from 1254 to 128 px wi
 ## Layout
 
 ```
-build.mjs          orchestrates the build, writes dist/
-build/lib.mjs      markdown slicing, table parsing, pnach parsing, scrubbing
-build/data.mjs     reads the repo docs into games > releases > codes
-build/render.mjs   HTML templates
-src/               site.css, site.js, bg.js
+build.ts           orchestrates the build, writes dist/
+build/lib.ts      markdown slicing, table parsing, pnach parsing, scrubbing
+build/data.ts     reads the repo docs into games > releases > codes
+build/render.ts   HTML templates
+src/               site.css, site.ts, bg.ts
 ```
+
+## TypeScript checks
+
+`npm run typecheck` covers the build entry point, every production module, both browser clients, shared search validation, and the house-check tool. The compiler enables strict mode, unchecked-index protection, exact optional properties, override checks, fallthrough checks, implicit-return checks, and index-signature access checks. External YAML/JSON starts as `unknown` and passes boundary validators. Catalog feature kinds and unlock variants have named contracts; complete consumers use the shared `assertNever`.
+
+`npm run lint` uses type-aware ESLint at error severity and a TypeScript compiler API house check for mutable graphs behind `const`, named arrow behavior, double assertions and non-boolean membership callbacks. Explicit variable, parameter and callback return annotations are required. `prefer-const` and `prefer-as-const` are deliberately disabled because the house guide requires mutable resources to use `let` and permits precise literal annotations. Readonly contracts belong to their owning data types; build assembly state and DOM resources stay mutable.
+
+`npm run format:check` checks source/configuration/test formatting. Protected release artifacts, CSS, content documentation and generated output are excluded from incidental formatting. `npm test` imports the actual TypeScript modules directly. With `RETRO_REPO` set, it also exercises the complete source catalog and generated pages. CI runs the full check and build using the pinned research release; it does not deploy.
+
+Browser entry points `src/site.ts` and `src/bg.ts` are bundled together with module splitting. No executable JavaScript is stored inside HTML templates. The externally owned background package retains its own source format and published typings.

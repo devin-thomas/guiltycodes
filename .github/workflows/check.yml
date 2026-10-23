@@ -1,0 +1,31 @@
+name: Check
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.18.0
+          cache: npm
+      - name: Check out the pinned research inputs
+        uses: actions/checkout@v4
+        with:
+          repository: devin-thomas/retro-graphics-research
+          ref: 2da211e15b56548fd23d851fb5a9dc2a47c4d75d
+          fetch-depth: 0
+          path: .scratch/research
+      - run: npm ci
+      - run: npm run check
+        env:
+          RETRO_REPO: ${{ github.workspace }}/.scratch/research
+      - run: npm run build
+        env:
+          RETRO_REPO: ${{ github.workspace }}/.scratch/research
+      - name: Release artifacts stay unchanged
+        run: git diff --exit-code -- pnach

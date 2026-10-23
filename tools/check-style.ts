@@ -26,7 +26,12 @@ function mutable(type: ts.Type, seen: Set<ts.Type>): boolean {
   if (name === "ReadonlyArray" || name === "ReadonlyMap" || name === "ReadonlySet") {
     return checker.getTypeArguments(type as ts.TypeReference).some((argument: ts.Type): boolean => mutable(argument, seen));
   }
-  if (checker.isArrayType(type) || checker.isTupleType(type)) return true;
+  if (checker.isTupleType(type)) {
+    // TypeScript exposes this runtime test as boolean rather than a type predicate.
+    let tuple: ts.TupleTypeReference = type as ts.TupleTypeReference;
+    return !tuple.target.readonly || checker.getTypeArguments(tuple).some((element: ts.Type): boolean => mutable(element, seen));
+  }
+  if (checker.isArrayType(type)) return true;
   if (name === "Map" || name === "Set" || name === "RegExp" || name === "Date" || name === "URL") return true;
   // Mapped Readonly records still need immutable values beneath their readonly keys.
   if (type.aliasSymbol?.name === "Readonly") {
