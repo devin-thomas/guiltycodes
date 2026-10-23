@@ -234,6 +234,17 @@
     "sha256": "cc97391e2a3f15d11d90f1dfc6a69c114973166f337169d7b4662c19d350283e"
   },
   {
+    "file": "SLUS-21847_F233A433.mom-player-forms-us.pnach",
+    "game": "Guilty Gear XX Accent Core Plus",
+    "release": "US",
+    "serial": "SLUS-21847",
+    "crc": "F233A433",
+    "featureId": "mom-player-forms-us",
+    "featurePages": 1,
+    "patchSections": 1,
+    "sha256": "ca81738ea84df21094a54ab38f754373020fbad56c0f247e80f89aadf4ce3ba8"
+  },
+  {
     "file": "SLUS-21847_F233A433.survival-practice-us.pnach",
     "game": "Guilty Gear XX Accent Core Plus",
     "release": "US",

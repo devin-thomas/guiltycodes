@@ -1,0 +1,10 @@
+gametitle=Guilty Gear XX Accent Core Plus (NTSC-U) [SLUS-21847] (F233A433)
+comment=Retains native Gold/Black player color choices in M.O.M.; the per-character unlock remains required.
+
+[Native Gold/Black player colors in M.O.M.]
+author=retro-graphics-research
+description=Skip only the M.O.M. palette normalization checks; use native selection and per-character unlocks.
+patch=1,EE,2022B27C,extended,00000000
+patch=1,EE,2022B28C,extended,10000002
+patch=1,EE,20236B64,extended,00000000
+patch=1,EE,20236B74,extended,10000002
