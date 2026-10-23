@@ -22,8 +22,11 @@ Use the published research branch `guilty-codes-delivery` for the complete
 feature catalog. The research repository's `main` branch does not contain the
 required ggmod source and accepted module catalog. Research commit
 `33eb61427d11d3416ffc5c9dc27785fcfbe340bf` is the precursor baseline, rather than
-the complete release. Current release reference: `81081dd1f1bac0738e611b22d71b2c9beaca4f54`
-(CPU Survival v1, including its qualified source and exact release artifact).
+the complete release. Current release reference: `2da211e15b56548fd23d851fb5a9dc2a47c4d75d`
+(combined CPU Arcade/M.O.M./Survival v1, including its qualified source and exact
+release artifact, plus corrected Respect/Dust palette instructions).
+Standalone CPU Survival v1 remains available from the previous release
+`81081dd1f1bac0738e611b22d71b2c9beaca4f54`.
 The previous eight-issue delivery reference is
 `830db45434311fc7fdd8954e583bd400b3e2c49c`.
 Each published manifest also pins its own evidence and artifact source revision;

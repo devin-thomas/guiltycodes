@@ -174,7 +174,7 @@ patch=1,EE,0034C9DD,extended,00000001
 
 [Unlock all gold and black characters]
 author=retro-graphics-research
-description=Gold (R2 to SLASH COLOR, pick with R1) and black (R2 to RELOAD COLOR, pick with R1) versions of all 25 characters.
+description=Gold: cycle to SLASH COLOR with Respect, then select with Dust. Black: RELOAD COLOR, then Dust. Default controls are Respect = R2 and Dust = R1; use your configured bindings. Applies to all 25 characters, subject to mode restrictions.
 patch=1,EE,4034C990,extended,000C0001
 patch=1,EE,00010001,extended,00000000
 patch=1,EE,1034C9C0,extended,00000001
