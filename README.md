@@ -119,3 +119,9 @@ src/               site.css, site.ts, bg.ts
 `npm run format:check` checks source/configuration/test formatting. Protected release artifacts, CSS, content documentation and generated output are excluded from incidental formatting. `npm test` imports the actual TypeScript modules directly. With `RETRO_REPO` set, it also exercises the complete source catalog and generated pages. CI runs the full check and build using the pinned research release; it does not deploy.
 
 Browser entry points `src/site.ts` and `src/bg.ts` are bundled together with module splitting. No executable JavaScript is stored inside HTML templates. The externally owned background package retains its own source format and published typings.
+
+The public GitHub check runs the strict compiler, style tools and self-contained
+catalog/boundary fixtures. The full integration test requires the private
+research checkout via `RETRO_REPO`; without it that one test reports a skip.
+Before publication, run the documented full check and build with that input.
+Private research source is not copied into this public repository or its CI.

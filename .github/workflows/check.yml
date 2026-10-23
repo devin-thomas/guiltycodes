@@ -13,19 +13,8 @@ jobs:
         with:
           node-version: 22.18.0
           cache: npm
-      - name: Check out the pinned research inputs
-        uses: actions/checkout@v4
-        with:
-          repository: devin-thomas/retro-graphics-research
-          ref: 2da211e15b56548fd23d851fb5a9dc2a47c4d75d
-          fetch-depth: 0
-          path: .scratch/research
       - run: npm ci
-      - run: npm run check
-        env:
-          RETRO_REPO: ${{ github.workspace }}/.scratch/research
-      - run: npm run build
-        env:
-          RETRO_REPO: ${{ github.workspace }}/.scratch/research
-      - name: Release artifacts stay unchanged
-        run: git diff --exit-code -- pnach
+      - name: Compiler, style and public fixture tests
+        run: npm run check
+      - name: Private-source integration scope
+        run: echo "::notice::The full catalog build uses private research inputs and is checked locally before publication. This public CI job checks the compiler, style and self-contained fixtures."

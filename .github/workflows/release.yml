@@ -19,7 +19,9 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           {
-            echo "PCSX2 cheat files for the Guilty Gear PS2 games. Put one in PCSX2's \`cheats\` folder and turn on cheats."
+            echo 'PCSX2 PNACH files for the Guilty Gear PS2 games. Select one complete feature module and rename it SERIAL_CRC.pnach using its release identity below. In PCSX2 choose Tools > Open Data Directory, put the file in patches, and enable its named sections in game Properties > Patches.'
+            echo
+            echo 'Legacy release cheat files use cheats and Properties > Cheats > Enable Cheats. The ZIP contains alternatives; do not enable every module together. Full placement instructions: https://guiltycodes.pages.dev/how-to/'
             echo
             echo "| File | Game | Release | Serial | CRC | Feature pages | Patch sections |"
             echo "|---|---|---|---|---|---|---|---|"
