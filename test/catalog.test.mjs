@@ -94,6 +94,7 @@ test("compiled setup instructions render publicly and native instructions appear
     env: { ...process.env, RETRO_REPO: f.repo, RENDER_RELEASE: JSON.stringify(release) },
   }));
   assert.match(pages.compiled, /Setup instructions/);
+  assert.match(pages.compiled, /href="\/pnach\/SLUS-21847_F233A433.training-controls.pnach" download="SLUS-21847_F233A433.pnach"/);
   assert.match(pages.compiled, /<ol><li>VENOM 640 \/ HUNTER: Gold Venom, FIXED CPU 32\.<\/li>/);
   assert.match(pages.compiled, /EXP Up, Hunter, Life Recovery, in that order/);
   assert.equal(pages.native.match(/VENOM 640 \/ HUNTER/g).length, 1);

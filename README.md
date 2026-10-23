@@ -32,6 +32,11 @@ First deploy: `npx wrangler login`, then `npx wrangler pages project create guil
 
 The build writes each scrubbed `.pnach` to `dist/pnach/`, a zip of all of them to `dist/downloads/guiltycodes-pnach.zip`, the `/downloads/` page, and a committed copy in `pnach/` (with `pnach/index.json`). Commit `pnach/` after a build that changes it.
 
+Feature-page download buttons suggest `SERIAL_CRC.pnach`, the filename PCSX2
+expects. Archive URLs and the all-files zip keep feature-specific names so
+alternative modules remain distinct. Follow the individual feature's setup and
+conflict instructions; do not install the entire zip as one active cheat set.
+
 To publish a GitHub release, push a date tag; `.github/workflows/release.yml` attaches every `pnach/*.pnach` and the zip:
 
 ```sh

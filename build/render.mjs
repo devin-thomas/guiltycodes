@@ -321,7 +321,7 @@ export function codePage(c, site, idx) {
     ? box("Setup instructions", `<ol>${c.instructions.map((instruction) => `<li>${esc(instruction)}</li>`).join("")}</ol>`)
     : "";
   const pnachBlock = c.artifact
-    ? `<p><a class="dlbtn" href="/pnach/${esc(c.artifact.file)}" download>Download ${esc(c.artifact.file)}</a></p><p>${c.artifact.sectionCount} patch sections. SHA-256: <code class="hash">${esc(c.artifact.sha256)}</code></p>`
+    ? `<p><a class="dlbtn" href="/pnach/${esc(c.artifact.file)}" download="${esc(r.serial)}_${esc(r.crc)}.pnach">Download ${esc(c.artifact.file)}</a></p><p>${c.artifact.sectionCount} patch sections. SHA-256: <code class="hash">${esc(c.artifact.sha256)}</code></p>`
     : c.pnach
     ? `<div class="boxcopy"><button class="copy" type="button" data-target="pn">Copy</button><pre class="code" id="pn" tabindex="0">${esc(c.pnach)}</pre></div>${r.pnachFile ? `<p><a href="/pnach/${esc(r.pnachFile)}" download>${esc(r.pnachFile)}</a>, all sections</p>` : ""}`
     : `<p>Not a memory write.</p>`;
