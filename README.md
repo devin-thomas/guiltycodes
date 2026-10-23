@@ -7,7 +7,7 @@ Static site. `build.ts` reads the cheat docs and writes `dist/`. All first-party
 ## Build
 
 ```sh
-git clone --branch continuation-forms-release --single-branch \
+git clone --branch sol-mod-frontier --single-branch \
   https://github.com/devin-thomas/retro-graphics-research.git /path/to/cheat-docs
 export RETRO_REPO=/path/to/cheat-docs
 npm ci
@@ -18,10 +18,16 @@ npm run deploy       # build, then wrangler pages deploy (project: guiltycodes)
 
 The source docs are read from `RETRO_REPO=/path/to/cheat-docs` or `node build.ts --source /path/to/cheat-docs`. They are only read.
 
-Use the published research branch `continuation-forms-release` for the complete
+Use the published research branch `sol-mod-frontier` for the complete
 current feature catalog. The research repository's `main` branch does not
 contain the accepted module catalog. Current source reference:
-`f19c337ba3fe28cbb026e4efb738eefac347f609`.
+`572ade07673c5f32a498fdbc05a17fca4dd369f2`.
+
+Two independent Training visibility codes add P1 HUD foreground hiding and
+infinity-symbol hiding. Each passed native reset/reentry and a new unpatched
+restoration process in the recorded US Sol-versus-Ky fight. Surrounding frames
+remain; neither code stops the timer. Their ordered patch writes match the
+tested candidates. All earlier downloadable PNACH files remain byte-identical.
 
 This release adds the standalone one-time Survival Continue handoff and a
 zero-based gold-star/CUSTOM timer, updates the combined CPU module with a working

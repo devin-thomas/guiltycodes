@@ -1,0 +1,4 @@
+gametitle=SLUS-21847 (F233A433)
+
+[Hide P1 HUD foreground (Training)]
+patch=1,EE,20249774,extended,00000000
