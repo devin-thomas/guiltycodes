@@ -91,6 +91,17 @@
     "sha256": "8910b671bc6190950dfa6859f7152350fd0f5073afdd5dd23194352fef13d779"
   },
   {
+    "file": "SLUS-21847_F233A433.cpu-survival-us.pnach",
+    "game": "Guilty Gear XX Accent Core Plus",
+    "release": "US",
+    "serial": "SLUS-21847",
+    "crc": "F233A433",
+    "featureId": "cpu-survival-us",
+    "featurePages": 1,
+    "patchSections": 1,
+    "sha256": "3b99c6faccbe473c9a5d609f8bee59e72e05abb8293de604ca7749cc8a5b58c1"
+  },
+  {
     "file": "SLUS-21847_F233A433.creator-bg-green.pnach",
     "game": "Guilty Gear XX Accent Core Plus",
     "release": "US",
