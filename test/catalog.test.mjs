@@ -389,6 +389,14 @@ test("existing catalog still builds with every code page and original release fi
   const howTo = fs.readFileSync(new URL("../dist/how-to/index.html", import.meta.url), "utf8");
   const downloads = fs.readFileSync(new URL("../dist/downloads/index.html", import.meta.url), "utf8");
   assert.match(howTo, /Properties &gt; Patches/);
+  for (const id of ["cpu-modes-us", "cpu-survival-us"]) {
+    const page = fs.readFileSync(
+      new URL(`../dist/games/guilty-gear-xx-accent-core-plus/us-slus-21847/${id}/index.html`, import.meta.url),
+      "utf8",
+    );
+    assert.match(page, /Properties \/ Patches, enable/);
+    assert.doesNotMatch(page, /Properties \/ Cheats|configured cheats folder|Settings \/ Folders \/ Cheats|Reload cheats/);
+  }
   assert.match(howTo, /Legacy release cheat files/);
   assert.match(howTo, /Properties &gt; Cheats/);
   assert.match(downloads, /Selectable feature downloads go in <code>patches<\/code>/);

@@ -1,5 +1,5 @@
 import type { CodeGroup } from "./model.ts";
-import { patchInstallHtml, patchInstallSummary } from "./install.ts";
+import { patchInstallHtml, patchInstallSummary, patchSetupText } from "./install.ts";
 import type { Published } from "./model.ts";
 import type { Code, Counts, Download, EvidenceLevel, Game, GameId, Release, Shared, Site, Status, Table, Unlock } from "./model.ts";
 import type { SimpleIcon } from "simple-icons";
@@ -429,7 +429,7 @@ function featureDetails(c: Code): string {
     ...(["enable", "disable", "reset", "persistence"] as const).map(
       (key: "enable" | "disable" | "reset" | "persistence"): readonly [string, string] => [
         key.charAt(0).toUpperCase() + key.slice(1),
-        c.lifecycle[key],
+        c.kind === "compiled-module" && key === "enable" ? patchSetupText(c.lifecycle[key]) : c.lifecycle[key],
       ],
     ),
   ];
@@ -494,7 +494,7 @@ export function codePage(c: Code, site: Site, idx: Neighbors): string {
     c.kind && c.kind !== "native-tip" && c.instructions.length
       ? box(
           "Setup instructions",
-          `<ol>${c.instructions.map((instruction: string): string => `<li>${esc(instruction)}</li>`).join("")}</ol>`,
+          `<ol>${c.instructions.map((instruction: string): string => `<li>${esc(c.kind === "compiled-module" ? patchSetupText(instruction) : instruction)}</li>`).join("")}</ol>`,
         )
       : "";
   const pnachBlock: string = c.artifact

@@ -40,7 +40,7 @@ The build writes each scrubbed `.pnach` to `dist/pnach/`, a zip to `dist/downloa
 
 Feature-page download buttons suggest `SERIAL_CRC.pnach`, the filename PCSX2
 expects. Archive URLs and the all-files zip keep feature-specific names so
-alternative modules remain distinct. Selectable feature downloads go in the active PCSX2 data directory's `patches` folder, with their named sections enabled under game Properties > Patches. Use Tools > Open Data Directory to find that directory. Portable example: `<PCSX2 folder>\patches\SLUS-21847_F233A433.pnach`. Legacy release cheat files retain their `cheats` folder and Properties > Cheats instructions. Follow each feature's setup and conflicts; do not install the entire ZIP as one active set. [PCSX2 documents the distinction](https://pcsx2.net/docs/advanced/writing-patches/).
+alternative modules remain distinct. Selectable feature downloads go in the active PCSX2 data directory's `patches` folder, with their named sections enabled under game Properties > Patches. Use Tools > Open Data Directory to find that directory. Portable example: `<PCSX2 folder>\patches\SLUS-21847_F233A433.pnach`. Legacy release cheat files retain their `cheats` folder and Properties > Cheats instructions. The renderer corrects older placement wording in compiled-module setup text while preserving the pinned evidence and download bytes. Follow each feature's setup and conflicts; do not install the entire ZIP as one active set. [PCSX2 documents the distinction](https://pcsx2.net/docs/advanced/writing-patches/).
 
 To publish a GitHub release, push a date tag; `.github/workflows/release.yml` attaches every `pnach/*.pnach` and the zip:
 

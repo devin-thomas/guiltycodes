@@ -3,7 +3,7 @@ import { test } from "node:test";
 import { parseSearch } from "../src/search.ts";
 import { array, list, record, number, text } from "../build/validate.ts";
 import { parseLocalRules } from "../build/lib.ts";
-import { patchInstallHtml, patchInstallSummary } from "../build/install.ts";
+import { patchInstallHtml, patchInstallSummary, patchSetupText } from "../build/install.ts";
 
 test("search accepts the published schema and rejects malformed fields and unsafe destinations", () => {
   const entry = { t: "CPU modes", g: "AC+", r: "US SLUS-21847", s: "VERIFIED", u: "/games/acplus/us/cpu-modes-us/", x: "cpu modes" };
@@ -53,4 +53,21 @@ test("local sanitizing rules allow removal replacements and reject malformed con
   assert.throws(() => parseLocalRules({ replace: [["only one value"]] }), /pattern and replacement/);
   assert.throws(() => parseLocalRules({ replace: [["pattern", 1]] }), /pattern and replacement/);
   assert.throws(() => parseLocalRules({ replace: [["[", ""]] }), SyntaxError);
+});
+
+test("pinned module setup copy uses the patches UI while preserving gameplay instructions", () => {
+  assert.equal(
+    patchSetupText("In game Properties / Cheats, enable cheats and CPU Survival v1 (US). Reload cheats or restart PCSX2."),
+    "In game Properties / Patches, enable CPU Survival v1 (US). Reload patches or restart PCSX2.",
+  );
+  assert.equal(
+    patchSetupText("in the folder shown in PCSX2 Settings / Folders / Cheats"),
+    "in the patches folder under Tools / Open Data Directory",
+  );
+  assert.equal(
+    patchSetupText("in your configured cheats folder; enable cheats and the CPU Survival v1 (US) section before boot."),
+    "in your active PCSX2 data directory's patches folder; enable the CPU Survival v1 (US) section before boot.",
+  );
+  const controls = "Hold physical R1 while confirming SURVIVAL; PLAYER LEVEL0-32. Respect/Dust uses your binding.";
+  assert.equal(patchSetupText(controls), controls);
 });
