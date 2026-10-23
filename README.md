@@ -7,7 +7,7 @@ Static site. `build.ts` reads the cheat docs and writes `dist/`. All first-party
 ## Build
 
 ```sh
-git clone --branch guilty-codes-delivery --single-branch \
+git clone --branch continuation-forms-release --single-branch \
   https://github.com/devin-thomas/retro-graphics-research.git /path/to/cheat-docs
 export RETRO_REPO=/path/to/cheat-docs
 npm ci
@@ -18,19 +18,23 @@ npm run deploy       # build, then wrangler pages deploy (project: guiltycodes)
 
 The source docs are read from `RETRO_REPO=/path/to/cheat-docs` or `node build.ts --source /path/to/cheat-docs`. They are only read.
 
-Use the published research branch `guilty-codes-delivery` for the complete
-feature catalog. The research repository's `main` branch does not contain the
-required ggmod source and accepted module catalog. Research commit
-`33eb61427d11d3416ffc5c9dc27785fcfbe340bf` is the precursor baseline, rather than
-the complete release. Current release reference: `2da211e15b56548fd23d851fb5a9dc2a47c4d75d`
-(combined CPU Arcade/M.O.M./Survival v1, including its qualified source and exact
-release artifact, plus corrected Respect/Dust palette instructions).
-Standalone CPU Survival v1 remains available from the previous release
-`81081dd1f1bac0738e611b22d71b2c9beaca4f54`.
-The previous eight-issue delivery reference is
-`830db45434311fc7fdd8954e583bd400b3e2c49c`.
-Each published manifest also pins its own evidence and artifact source revision;
-the build verifies those pins without requiring a separate source lockfile.
+Use the published research branch `continuation-forms-release` for the complete
+current feature catalog. The research repository's `main` branch does not
+contain the accepted module catalog. Current source reference:
+`e39eb6eb0115cc6606218e34021dead5f29ffe21`.
+
+This release adds the standalone one-time Survival Continue handoff and a
+zero-based gold-star/CUSTOM timer, updates the combined CPU module with a working
+elapsed clock, and adds native Gold/Black player palette access in Survival.
+The earlier Survival Practice and standalone CPU Survival artifacts remain
+unchanged as legacy choices. CPU v1 personal-run evidence belongs to its old
+artifact, which used the previous timer behavior.
+
+Historical source references remain `2da211e15b56548fd23d851fb5a9dc2a47c4d75d`
+(combined CPU v1), `81081dd1f1bac0738e611b22d71b2c9beaca4f54`
+(standalone CPU Survival v1), and `830db45434311fc7fdd8954e583bd400b3e2c49c`
+(the preceding eight-issue delivery). Each current catalog entry pins its own
+evidence and artifact revision; the build validates those pins.
 
 First deploy: `npx wrangler login`, then `npx wrangler pages project create guiltycodes --production-branch main`. With more than one Cloudflare account, set `CLOUDFLARE_ACCOUNT_ID`.
 
@@ -116,7 +120,7 @@ src/               site.css, site.ts, bg.ts
 
 `npm run lint` uses type-aware ESLint at error severity and a TypeScript compiler API house check for mutable graphs behind `const`, named arrow behavior, double assertions and non-boolean membership callbacks. Explicit variable, parameter and callback return annotations are required. `prefer-const` and `prefer-as-const` are deliberately disabled because the house guide requires mutable resources to use `let` and permits precise literal annotations. Readonly contracts belong to their owning data types; build assembly state and DOM resources stay mutable.
 
-`npm run format:check` checks source/configuration/test formatting. Protected release artifacts, CSS, content documentation and generated output are excluded from incidental formatting. `npm test` imports the actual TypeScript modules directly. With `RETRO_REPO` set, it also exercises the complete source catalog and generated pages. CI runs the full check and build using the pinned research release; it does not deploy.
+`npm run format:check` checks source/configuration/test formatting. Protected release artifacts, CSS, content documentation and generated output are excluded from incidental formatting. `npm test` imports the actual TypeScript modules directly. With `RETRO_REPO` set, it also exercises the complete source catalog and generated pages. CI runs the compiler, style tools and self-contained public fixtures. The full private catalog check and build run locally with the pinned research input before publication; CI does not deploy.
 
 Browser entry points `src/site.ts` and `src/bg.ts` are bundled together with module splitting. No executable JavaScript is stored inside HTML templates. The externally owned background package retains its own source format and published typings.
 

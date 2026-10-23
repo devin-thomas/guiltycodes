@@ -1,0 +1,8 @@
+gametitle=Guilty Gear XX Accent Core Plus (US SLUS-21847, CRC F233A433)
+comment=Native Survival player Gold/Black palette access; native per-character unlock remains required.
+
+[Native Gold/Black player colors in Survival]
+author=retro-graphics-research
+description=Allow unlocked native Gold and Black player colors in Survival without changing combat stats directly.
+patch=1,EE,2022B268,extended,30424000
+patch=1,EE,20236B50,extended,3042C000
