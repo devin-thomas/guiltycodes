@@ -533,7 +533,7 @@ ${proof}${ui}
 ${box(
   "About this page",
   `<p>Mission records are 30 blocks of 0x80 bytes in the game's data at <code>0x302BE0</code>, every field a signed 16-bit value. The stock values are decoded from the US disc and match the game's own info screen for Missions 1 to 25. Slots 26 to 30 appear in the game only after Missions 1 to 25 are cleared, so their stock values are decoded but not photographed.</p>
-<p>Screenshots are the author's own PCSX2 captures of the unmodified US disc. PCSX2 picks up any <code>SERIAL_CRC*.pnach</code> file beside the main one (it is in PCSX2's source); our own emulator runs installed the Mission files under the main name, so the suffixed name has not been run here.</p>`,
+<p>Screenshots are the author's own PCSX2 captures of the unmodified US disc. PCSX2 loads any <code>SERIAL_CRC*.pnach</code> file beside the main one. This is tested: with a different main file in <code>cheats</code>, both loaded and the Mission 1 demo showed on the info screen.</p>`,
 )}
 </div>`;
   return shell({
