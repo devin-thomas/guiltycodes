@@ -37,24 +37,31 @@ for i in range(1, 26):
 total += conv(os.path.join(M, 'ms-m1-patch-a1-info.png'), os.path.join(a.out, 'demo-info.webp')); n += 1
 total += conv(os.path.join(M, 'ms-m1-patch-c1-fight.png'), os.path.join(a.out, 'demo-fight.webp')); n += 1
 
-# ui-library: arrives later from the capture agent. Tolerant reader: a list of entries, or {key: entry}; an entry is a
-# filename or an object with file/filename/path and title/name/label.
+# ui-library: arrives later from the capture agent. Manifest: a list of entries (or {shots|items|images|files|entries: [...]},
+# or {key: entry}). Entry fields: file, scene, mission, res, caption (a bare filename also works). The caption is shown
+# under the shot, scene is its alt text; width and height come from the converted image, not from res.
 ui = []
 lib = os.path.join(M, 'ui-library')
 mf = os.path.join(lib, 'manifest.json')
 if os.path.exists(mf):
     raw = json.load(open(mf, encoding='utf-8'))
-    items = raw.get('shots', raw.get('items', raw)) if isinstance(raw, dict) else raw
+    items = raw
+    if isinstance(raw, dict):
+        items = next((raw[k] for k in ('shots', 'items', 'images', 'files', 'entries') if k in raw), raw)
     if isinstance(items, dict):
         items = [{'key': k, **(v if isinstance(v, dict) else {'file': v})} for k, v in items.items()]
     for e in items:
         if isinstance(e, str):
             e = {'file': e}
         f = e.get('file') or e.get('filename') or e.get('path')
-        if not f or not os.path.exists(os.path.join(lib, f)) or not f.lower().endswith(('.png', '.jpg', '.jpeg')):
+        if not f or not os.path.exists(os.path.join(lib, f)) or not f.lower().endswith(('.png', '.jpg', '.jpeg', '.webp')):
             continue
         name = os.path.splitext(os.path.basename(f))[0]
-        total += conv(os.path.join(lib, f), os.path.join(a.out, 'ui', name + '.webp')); n += 1
-        ui.append({'file': name + '.webp', 'title': e.get('title') or e.get('name') or e.get('label') or e.get('key') or name, 'source': f})
+        dst = os.path.join(a.out, 'ui', name + '.webp')
+        total += conv(os.path.join(lib, f), dst); n += 1
+        w, h = Image.open(dst).size
+        scene = e.get('scene') or e.get('key') or name
+        caption = e.get('caption') or e.get('title') or e.get('name') or e.get('label') or str(scene)
+        ui.append({'file': name + '.webp', 'scene': scene, 'caption': caption, 'mission': e.get('mission'), 'res': e.get('res'), 'width': w, 'height': h, 'source': f})
 json.dump(ui, open(os.path.join(a.out, 'ui.json'), 'w', encoding='utf-8'), indent=1)
 print(f'{n} images, {total/1024:.0f} KiB -> {os.path.abspath(a.out)}; ui-library entries: {len(ui)}')

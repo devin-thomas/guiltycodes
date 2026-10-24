@@ -44,7 +44,7 @@ Statuses come from the docs' own tables. Releases tested only by prose (FAMILY.m
 
 Left out on purpose: routine and jump-table addresses, script names, evidence-capture paths, and the asset-hash comparison of stage art. The build scrubs them from extracted text (`scrub` in `build/lib.mjs`).
 
-No game binaries, extracted assets, or decompilation material are in this repo or on the site.
+No game binaries, disc files, extracted assets, or decompilation material are in this repo or on the site. The one place that shows the game is the Mission Editor page, with the author's own PCSX2 screenshots of the US disc; those are built from a local folder and are not committed (see Mission Editor).
 
 ## Look and feel: what was studied
 
@@ -73,12 +73,12 @@ Uppercut Labs logo (the original brand image), downscaled from 1254 to 128 px wi
 
 ## Mission Editor (beta)
 
-A tab on the Accent Core Plus US release (`/games/guilty-gear-xx-accent-core-plus/us-slus-21847/mission-editor/`, also linked from the sidebar). It edits the 30 Mission mode slots and writes a PCSX2 `.pnach`. Marked Beta because the field layout and stock values are read from the game and three edits are tested (Mission 1 enemy, time and your start life); stage and music names and the value limits are stubs.
+A tab on the Accent Core Plus US release (`/games/guilty-gear-xx-accent-core-plus/us-slus-21847/mission-editor/`, also linked from the sidebar). It edits the 30 Mission mode slots and writes a PCSX2 `.pnach`, downloaded as `SLUS-21847_F233A433.mission-editor.pnach` so it sits beside the main file (PCSX2 loads every `SERIAL_CRC*.pnach`; see its `Patch.cpp`, `GetPnachTemplate`). Marked Beta because the field layout and stock values are read from the game and three edits are tested (Mission 1 enemy, time and your start life); stage and music names and the value limits are stubs.
 
 - `data/mission-editor.json` is the stock data (30 records, 35 fields). Regenerate it with `python tools/mission-data.py --src <games/ggacplus-missions checkout>`; it reads `FIELDS` from `tools/missions.py` and `data/missions_us.csv` there. The build only reads the JSON.
 - `src/mission-data.js` is the replaceable data layer (`window.MISSION_DATA`: STOCK, FIELDS, CHARS, STAGES, BGMS, LIMITS, EXAMPLES, `encode()`). `encode()` is unchanged from the first editor. `src/mission-editor.js` is the form. The build writes `assets/mission-stock.js` from the JSON.
 - `node tools/check-mission-encoder.mjs <mission1-demo.pnach>` checks the built encoder against the tested file.
-- Screenshots are PS2 captures of the US disc and are **not committed**. `python tools/mission-shots.py` converts them from `E:/holding bay/retro-graphics-research/captures` (`GC_CAPTURES` or `--src` to override) into `src/mission-shots/` (gitignored); the build copies that folder to `assets/missions/` when it exists, and the page shows empty frames when it does not. Sources: `ggacplus-missions/ms-info-stock-no01..25.png`, `ms-m1-patch-a1-info.png`, `ms-m1-patch-c1-fight.png`, and, when it exists, `ggacplus-missions/ui-library/manifest.json`. Missions 26 to 30 have no capture: the stock selector wraps to No. 1 to 5. `captures/acplusr-footage` is the PC +R release and is never used.
+- Screenshots are PS2 captures of the US disc and are **not committed**. `python tools/mission-shots.py` converts them from `E:/holding bay/retro-graphics-research/captures` (`GC_CAPTURES` or `--src` to override) into `src/mission-shots/` (gitignored); the build copies that folder to `assets/missions/` when it exists, and the page shows empty frames when it does not. Sources: `ggacplus-missions/ms-info-stock-no01..25.png`, `ms-m1-patch-a1-info.png`, `ms-m1-patch-c1-fight.png`, and, when it exists, `ggacplus-missions/ui-library/manifest.json` (entries with `file`, `scene`, `mission`, `res`, `caption`; the caption is shown under the shot). Missions 26 to 30 have no capture: the stock selector wraps to No. 1 to 5. `captures/acplusr-footage` is the PC +R release and is never used.
 
 ## Layout
 

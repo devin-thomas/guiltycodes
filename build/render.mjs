@@ -99,7 +99,7 @@ ${body}
       <li><a href="https://x.com/gohan__fgc" rel="noopener me" aria-label="@gohan__fgc on X">${icon(siX)}<span>@gohan__fgc</span></a></li>
     </ul>
   </div>
-  <p>Unofficial fan site. Guilty Gear is a trademark of Arc System Works. No game assets are hosted here.</p>
+  <p>Unofficial fan site. Guilty Gear is a trademark of Arc System Works. No game data or disc files are hosted here. Screenshots are the author's own PCSX2 captures of the US disc.</p>
   <p>Built ${esc(site.built)}. <button type="button" id="bgtoggle" class="linkbtn" aria-pressed="true">Background: on</button></p>
 </footer>
 </div>
@@ -489,8 +489,8 @@ export function notFoundPage(site) {
 // The form itself is built in the browser by assets/mission-editor.js from window.MISSION_DATA. This is the page frame.
 // ctx: { shots: bool (the converted screenshots exist), ui: [{file,title}] from the capture library }
 export function missionPage(r, site, ctx) {
-  const fig = (src, cap, alt) =>
-    `<figure class="shot"><a href="/assets/missions/${src}" target="_blank" rel="noopener"><img src="/assets/missions/${src}" width="640" height="448" alt="${esc(alt)}" loading="lazy"></a><figcaption>${cap}</figcaption></figure>`;
+  const fig = (src, cap, alt, w = 640, h = 448) =>
+    `<figure class="shot"><a href="/assets/missions/${src}" target="_blank" rel="noopener"><img src="/assets/missions/${src}" width="${w}" height="${h}" alt="${esc(alt)}" loading="lazy"></a><figcaption>${cap}</figcaption></figure>`;
   const frame = ctx.shots ? "" : ` data-noshots="1"`;
   const proof = ctx.shots
     ? box(
@@ -501,7 +501,7 @@ export function missionPage(r, site, ctx) {
       )
     : "";
   const ui = ctx.ui?.length
-    ? box("Finding Mission mode", `<div class="shots">${ctx.ui.map((u) => fig(`ui/${u.file}`, esc(u.title), `PS2 Accent Core Plus: ${u.title}`)).join("")}</div>`, "where")
+    ? box("Finding Mission mode", `<div class="shots">${ctx.ui.map((u) => fig(`ui/${u.file}`, esc(u.caption), `PS2 Accent Core Plus: ${u.scene || u.caption}`, u.width, u.height)).join("")}</div>`, "where")
     : "";
   const body = `${relHeader(r, "mission-editor/")}
 <div class="warn"><b>Beta.</b> The field layout and the stock values are read from the game, and three edits are tested: Mission 1's enemy, time and your start life. Stage and music names and the allowed ranges are not checked yet, so some values may do nothing or break a fight. Keep a memory card backup and treat every code on this page as <span class="st st-inferred">INFERRED</span> unless the field table says VERIFIED.</div>
@@ -519,8 +519,8 @@ ${box("3. Fighters", `<div class="tablewrap"><table class="grid edit" id="ftable
 ${box(
   "4. Your code",
   `<div class="boxcopy"><button class="copy" type="button" data-target="pn">Copy</button><pre class="code" id="pn" tabindex="0" aria-live="polite"></pre></div>
-<p class="dl"><a class="dlbtn" id="pndl" href="#" download="${esc(r.serial)}_${esc(r.crc)}.pnach">Download ${esc(r.serial)}_${esc(r.crc)}.pnach</a> <span class="shown" id="pnmeta"></span> <button type="button" id="clearall">Clear all changes</button></p>
-<div class="prose"><h3>Use it in PCSX2</h3><ol><li>Open PCSX2's <code>cheats</code> folder. If <code>${esc(r.serial)}_${esc(r.crc)}.pnach</code> is already there (the <a href="/downloads/">Downloads</a> file), paste these sections at the end of it. Otherwise save the download under that name.</li><li>Turn cheats on and tick the <code>Mission</code> cheats you want (see <a href="/how-to/">How to use</a>), then boot the disc.</li><li>Open Mission mode and pick the slot you edited. The info screen shows the new values before you start.</li></ol></div>`,
+<p class="dl"><a class="dlbtn" id="pndl" href="#" download="${esc(r.serial)}_${esc(r.crc)}.mission-editor.pnach">Download ${esc(r.serial)}_${esc(r.crc)}.mission-editor.pnach</a> <span class="shown" id="pnmeta"></span> <button type="button" id="clearall">Clear all changes</button></p>
+<div class="prose"><h3>Use it in PCSX2</h3><ol><li>Save the download in PCSX2's <code>cheats</code> folder, next to <code>${esc(r.serial)}_${esc(r.crc)}.pnach</code> if you have it (the <a href="/downloads/">Downloads</a> file). PCSX2 loads every <code>${esc(r.serial)}_${esc(r.crc)}*.pnach</code> file there, so the two do not clash. If you copy the text instead, save it as <code>${esc(r.serial)}_${esc(r.crc)}.mission-editor.pnach</code>.</li><li>Turn cheats on and tick the <code>Mission</code> cheats you want (see <a href="/how-to/">How to use</a>), then boot the disc.</li><li>Open Mission mode and pick the slot you edited. The info screen shows the new values before you start.</li></ol></div>`,
   "code",
 )}
 ${box(
@@ -533,7 +533,7 @@ ${proof}${ui}
 ${box(
   "About this page",
   `<p>Mission records are 30 blocks of 0x80 bytes in the game's data at <code>0x302BE0</code>, every field a signed 16-bit value. The stock values are decoded from the US disc and match the game's own info screen for Missions 1 to 25. Slots 26 to 30 appear in the game only after Missions 1 to 25 are cleared, so their stock values are decoded but not photographed.</p>
-<p>Screenshots are PS2 captures of the unmodified US disc, taken in PCSX2.</p>`,
+<p>Screenshots are the author's own PCSX2 captures of the unmodified US disc. PCSX2 picks up any <code>SERIAL_CRC*.pnach</code> file beside the main one (it is in PCSX2's source); our own emulator runs installed the Mission files under the main name, so the suffixed name has not been run here.</p>`,
 )}
 </div>`;
   return shell({
