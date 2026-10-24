@@ -1,4 +1,4 @@
-import type { start, stop } from "./bg.ts";
+import type { startBackground, stopBackground } from "./bg.ts";
 import { parseSearch } from "./search.ts";
 import type { SearchEntry } from "./search.ts";
 
@@ -78,7 +78,7 @@ function setupFilter(): void {
   let rows: NodeListOf<HTMLTableRowElement> = table.querySelectorAll<HTMLTableRowElement>("tr.code");
   let groups: NodeListOf<HTMLTableRowElement> = table.querySelectorAll<HTMLTableRowElement>("tr.grp");
   let shown: HTMLElement = requireElement("#shown", HTMLElement);
-  function apply(): void {
+  function applyFilter(): void {
     const terms: readonly string[] = input.value.trim().toLowerCase().split(/\s+/).filter(Boolean);
     const enabled: ReadonlySet<string | undefined> = new Set(
       [...chips]
@@ -89,31 +89,31 @@ function setupFilter(): void {
     for (let row of rows) {
       const searchable: string | undefined = row.dataset["t"];
       if (searchable === undefined) throw new Error("Code row has no search text");
-      const visible: boolean = enabled.has(row.dataset["s"]) && terms.every((term: string): boolean => searchable.includes(term));
-      row.hidden = !visible;
-      if (visible) count++;
+      const isVisible: boolean = enabled.has(row.dataset["s"]) && terms.every((term: string): boolean => searchable.includes(term));
+      row.hidden = !isVisible;
+      if (isVisible) count++;
     }
     for (let group of groups) {
       let sibling: Element | null = group.nextElementSibling;
-      let visible: boolean = false;
+      let hasVisibleRow: boolean = false;
       while (sibling && !sibling.classList.contains("grp")) {
-        if (sibling instanceof HTMLElement && !sibling.hidden) visible = true;
+        if (sibling instanceof HTMLElement && !sibling.hidden) hasVisibleRow = true;
         sibling = sibling.nextElementSibling;
       }
-      group.hidden = !visible;
+      group.hidden = !hasVisibleRow;
     }
     shown.textContent = count === rows.length ? "" : `${count} of ${rows.length}`;
   }
-  input.addEventListener("input", apply);
+  input.addEventListener("input", applyFilter);
   for (let chip of chips)
     chip.addEventListener("click", (): void => {
       chip.setAttribute("aria-pressed", chip.getAttribute("aria-pressed") === "true" ? "false" : "true");
-      apply();
+      applyFilter();
     });
   const query: string | null = new URLSearchParams(location.search).get("q");
   if (query) {
     input.value = query;
-    apply();
+    applyFilter();
   }
 }
 async function setupSearch(): Promise<void> {
@@ -123,15 +123,15 @@ async function setupSearch(): Promise<void> {
   let output: HTMLTableElement = requireElement("#stable", HTMLTableElement);
   let tbody: HTMLTableSectionElement = requireElement("tbody", HTMLTableSectionElement, output);
   let note: HTMLElement = requireElement("#sres", HTMLElement);
-  let data: readonly SearchEntry[] | null = null;
-  function run(): void {
+  let entries: readonly SearchEntry[] | null = null;
+  function showResults(): void {
     const terms: readonly string[] = input.value.trim().toLowerCase().split(/\s+/).filter(Boolean);
-    if (!data || !terms.length) {
+    if (!entries || !terms.length) {
       output.hidden = true;
       note.textContent = "";
       return;
     }
-    const hits: readonly SearchEntry[] = data.filter((entry: SearchEntry): boolean =>
+    const hits: readonly SearchEntry[] = entries.filter((entry: SearchEntry): boolean =>
       terms.every((term: string): boolean => entry.x.includes(term)),
     );
     output.hidden = !hits.length;
@@ -149,17 +149,17 @@ async function setupSearch(): Promise<void> {
   form.addEventListener("submit", (event: Event): void => {
     event.preventDefault();
     history.replaceState(null, "", `?q=${encodeURIComponent(input.value)}`);
-    run();
+    showResults();
   });
-  input.addEventListener("input", run);
+  input.addEventListener("input", showResults);
   try {
     const response: Response = await fetch("/search.json");
     if (!response.ok) throw new Error(`Search index request failed: ${response.status}`);
     const raw: unknown = await response.json();
-    data = parseSearch(raw);
+    entries = parseSearch(raw);
     const query: string | null = new URLSearchParams(location.search).get("q");
     if (query) input.value = query;
-    run();
+    showResults();
   } catch (error: unknown) {
     note.textContent = "Search could not load. Reload to try again.";
     throw error;
@@ -176,7 +176,7 @@ function readBackgroundPreference(): boolean {
 }
 function setupBackground(): void {
   let button: HTMLButtonElement = requireElement("#bgtoggle", HTMLButtonElement);
-  let want: boolean = readBackgroundPreference();
+  let isWanted: boolean = readBackgroundPreference();
   if (
     "connection" in navigator &&
     typeof navigator.connection === "object" &&
@@ -184,34 +184,34 @@ function setupBackground(): void {
     "saveData" in navigator.connection &&
     navigator.connection.saveData === true
   )
-    want = false;
-  let background: { readonly start: typeof start; readonly stop: typeof stop } | null = null;
-  async function apply(): Promise<void> {
-    button.textContent = `Background: ${want ? "on" : "off"}`;
-    button.setAttribute("aria-pressed", String(want));
-    document.documentElement.classList.toggle("bg-off", !want);
-    if (want) {
+    isWanted = false;
+  let background: { readonly startBackground: typeof startBackground; readonly stopBackground: typeof stopBackground } | null = null;
+  async function applyBackground(): Promise<void> {
+    button.textContent = `Background: ${isWanted ? "on" : "off"}`;
+    button.setAttribute("aria-pressed", String(isWanted));
+    document.documentElement.classList.toggle("bg-off", !isWanted);
+    if (isWanted) {
       background ??= await import("./bg.ts");
       // A later click may have disabled the background while the import loaded.
-      if (want) background.start("#bg");
-    } else background?.stop();
+      if (isWanted) background.startBackground("#bg");
+    } else background?.stopBackground();
   }
   function reportFailure(error: unknown): void {
     console.error("Background could not start", error);
     document.documentElement.classList.add("bg-off");
   }
   button.addEventListener("click", (): void => {
-    want = !want;
+    isWanted = !isWanted;
     try {
-      localStorage.setItem("gc-bg", want ? "on" : "off");
+      localStorage.setItem("gc-bg", isWanted ? "on" : "off");
     } catch (error: unknown) {
       if (!(error instanceof DOMException)) throw error;
       console.warn("Background preference could not be saved", error.name);
     }
-    apply().catch(reportFailure);
+    applyBackground().catch(reportFailure);
   });
   function boot(): void {
-    apply().catch(reportFailure);
+    applyBackground().catch(reportFailure);
   }
   if (document.readyState === "complete") boot();
   else

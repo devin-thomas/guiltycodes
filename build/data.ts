@@ -1,13 +1,12 @@
-import type { DerivedFinding, PublishedFinding, ReleasePin } from "./registry.ts";
-import type { ParsedPnach, CatalogFeature } from "./model.ts";
 // Reads the cheat docs (read-only) and builds the site model.
 import fs from "node:fs";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
 import { parseRegistry, parseEvidenceLevel } from "./registry.ts";
-import type { Registry } from "./registry.ts";
+import type { DerivedFinding, PublishedFinding, Registry, ReleasePin } from "./registry.ts";
 import { countCodes, requireValue } from "./model.ts";
 import type {
+  CatalogFeature,
   Code,
   CodeDraft,
   CodeFields,
@@ -17,6 +16,7 @@ import type {
   GameDefinition,
   GameId,
   LegacyCode,
+  ParsedPnach,
   PnachSection,
   Release,
   ReleaseInput,
@@ -25,23 +25,34 @@ import type {
   Status,
   Table,
 } from "./model.ts";
+import { loadCatalog } from "./catalog.ts";
+import { sectionBody, textBetween, tableWith, stripMarkdown, parsePnach, regionName, regionCode, slugify, scrub } from "./lib.ts";
 
 type CodeEvidence = Pick<CodeFields, "status" | "level" | "checked">;
 type MatrixEntry = { readonly status: Status; readonly raw: string; readonly level: string | undefined; readonly checked: string };
+type EvidenceRule = (title: string, statusRow: RegExp) => CodeEvidence | null;
 type FamilyDefinition = {
   readonly serial: string;
   readonly crc: string;
   readonly file: string;
   readonly gameId: GameId;
   readonly label: string;
-  readonly ver: string;
-  readonly rowRe: RegExp;
+  readonly version: string;
+  readonly rowPattern: RegExp;
   readonly mapKey: string;
-  readonly identRe: RegExp;
-  readonly rule: (title: string, release: RegExp) => CodeEvidence | null;
+  readonly identityPattern: RegExp;
+  readonly rule: EvidenceRule;
   readonly fallback?: readonly string[] | undefined;
 };
-const GAME_DEFS: readonly GameDefinition[] = [
+type JapaneseRelease = {
+  readonly serial: string;
+  readonly crc: string;
+  readonly file: string;
+  readonly isAppendEdition: boolean;
+  readonly label: string;
+};
+
+const GAME_DEFINITIONS: readonly GameDefinition[] = [
   { id: "x", title: "Guilty Gear X", short: "X", slug: "guilty-gear-x" },
   { id: "xx", title: "Guilty Gear XX / X2", short: "XX / X2", slug: "guilty-gear-xx-x2" },
   { id: "reload", title: "Guilty Gear XX #Reload", short: "#Reload", slug: "guilty-gear-xx-reload" },
@@ -50,87 +61,69 @@ const GAME_DEFS: readonly GameDefinition[] = [
   { id: "acplus", title: "Guilty Gear XX Accent Core Plus", short: "AC+", slug: "guilty-gear-xx-accent-core-plus" },
   { id: "isuka", title: "Guilty Gear Isuka", short: "Isuka", slug: "guilty-gear-isuka" },
 ];
-import { loadCatalog, FEATURE_CATEGORIES } from "./catalog.ts";
-import { section, between, tableWith, stripMd, parsePnach, regionOf, regionShort, slugify, scrub } from "./lib.ts";
 
-const argSource: string | null | undefined = process.argv.includes("--source") ? process.argv[process.argv.indexOf("--source") + 1] : null;
-export const REPO: string = requireValue(
-  argSource || process.env["RETRO_REPO"],
-  "Set RETRO_REPO or pass --source <path> to the cheat docs checkout.",
-);
-function read(rel: string): string {
-  return fs.readFileSync(path.join(REPO, rel), "utf8").replace(/\r\n/g, "\n");
+/** The cheat docs checkout, from --source or RETRO_REPO; resolved when the site loads, not at import. */
+function sourceRepo(): string {
+  const sourceArgument: string | null | undefined = process.argv.includes("--source")
+    ? process.argv[process.argv.indexOf("--source") + 1]
+    : null;
+  return requireValue(sourceArgument || process.env["RETRO_REPO"], "Set RETRO_REPO or pass --source <path> to the cheat docs checkout.");
 }
-const AC: "games/ggacplus-cheats" = "games/ggacplus-cheats";
-const X2: "games/ggx2-cheats" = "games/ggx2-cheats";
 
-const HW: "NOT TESTED" = "NOT TESTED";
-export const STATUS_ORDER: readonly Status[] = ["VERIFIED", "INFERRED", "NOT TESTED", "SUPERSEDED"];
+const AC_PLUS_DIR: "games/ggacplus-cheats" = "games/ggacplus-cheats";
+const X2_DIR: "games/ggx2-cheats" = "games/ggx2-cheats";
+const HARDWARE_STATUS: "NOT TESTED" = "NOT TESTED";
 
-const GROUPS: readonly CodeGroup[] = [
-  "Everything",
-  "Characters and modes",
-  "EX characters",
-  "Gold, black and SP colours",
-  "Progress",
-  "Stages",
-  "lee4, 2014",
-  "lee4, 2009 (superseded)",
-  "Passwords",
-  ...FEATURE_CATEGORIES,
-];
-function groupFor(t: string): CodeGroup {
-  if (/^Unlock everything/i.test(t)) return "Everything";
-  if (/^Stage select|^Load any stage/i.test(t)) return "Stages";
-  if (/\bEX\b/.test(t) && !/GG mode and EX/.test(t)) return "EX characters";
-  if (/gold|black|\bSP\b/i.test(t)) return "Gold, black and SP colours";
-  if (/missions|story endings|gallery|play time/i.test(t)) return "Progress";
+function groupFor(title: string): CodeGroup {
+  if (/^Unlock everything/i.test(title)) return "Everything";
+  if (/^Stage select|^Load any stage/i.test(title)) return "Stages";
+  if (/\bEX\b/.test(title) && !/GG mode and EX/.test(title)) return "EX characters";
+  if (/gold|black|\bSP\b/i.test(title)) return "Gold, black and SP colours";
+  if (/missions|story endings|gallery|play time/i.test(title)) return "Progress";
   return "Characters and modes";
 }
 
-function levelOf(s: string | undefined): EvidenceLevel | null {
-  let match: RegExpMatchArray | null = String(s).match(/\bS([0-6])\b/);
-  return match ? parseEvidenceLevel(match[0]) : null;
+function levelOf(cell: string | undefined): EvidenceLevel | null {
+  let levelMatch: RegExpMatchArray | null = String(cell).match(/\bS([0-6])\b/);
+  return levelMatch ? parseEvidenceLevel(levelMatch[0]) : null;
 }
-function statusOf(s: string | undefined): Status {
-  const t: string = stripMd(s).toLowerCase();
-  if (t.startsWith("superseded")) return "SUPERSEDED";
-  if (t.startsWith("verified")) return "VERIFIED";
-  if (t.startsWith("inferred")) return "INFERRED";
-  if (t.startsWith("not tested") || t.startsWith("not run")) return "NOT TESTED";
-  throw new Error(`Unknown status: ${s}`);
+
+function statusOf(cell: string | undefined): Status {
+  const label: string = stripMarkdown(cell).toLowerCase();
+  if (label.startsWith("superseded")) return "SUPERSEDED";
+  if (label.startsWith("verified")) return "VERIFIED";
+  if (label.startsWith("inferred")) return "INFERRED";
+  if (label.startsWith("not tested") || label.startsWith("not run")) return "NOT TESTED";
+  throw new Error(`Unknown status: ${cell}`);
 }
-function cleanNote(s: string | undefined): string {
-  return scrub(stripMd(s))
+
+function cleanNote(cell: string | undefined): string {
+  return scrub(stripMarkdown(cell))
     .replace(/\s*\([^()]*\.py[^()]*\)/g, "")
     .replace(/^-$/, "")
     .trim();
 }
 
-function sourceCommit(): string {
-  return execFileSync("git", ["-C", REPO, "rev-parse", "--short", "HEAD"], { encoding: "utf8" }).trim();
-}
-
-function loadRegistry(): Registry {
-  return parseRegistry(read(`${AC}/registry.yaml`));
+function sourceCommit(repo: string): string {
+  return execFileSync("git", ["-C", repo, "rev-parse", "--short", "HEAD"], { encoding: "utf8" }).trim();
 }
 
 // ---------- code builders ----------
 
-function makeCode(sec: PnachSection, extra: Partial<CodeEvidence> & { readonly regId?: string }): LegacyCode {
-  const title: string = sec.name;
+function makeCode(section: PnachSection, extra: Partial<CodeEvidence> & { readonly registryId?: string }): LegacyCode {
+  const title: string = section.name;
   return {
     id: slugify(title),
     title,
     group: groupFor(title),
-    effect: scrub(sec.description),
-    raw: sec.raw,
-    pnach: scrub(sec.text),
-    author: sec.author,
+    effect: scrub(section.description),
+    raw: section.raw,
+    pnach: scrub(section.text),
+    author: section.author,
     status: "INFERRED",
     level: null,
     checked: "",
-    hardware: HW,
+    hardware: HARDWARE_STATUS,
     ...extra,
   };
 }
@@ -146,81 +139,89 @@ function uniqueSlugs(codes: readonly CodeDraft[]): readonly CodeDraft[] {
 
 // ---------- main ----------
 export function loadSite(): Site {
-  const acDoc: string = read(`${AC}/CHEATS.md`);
-  const x2Doc: string = read(`${X2}/CHEATS.md`);
-  const famDoc: string = read(`${X2}/FAMILY.md`);
-  const othDoc: string = read(`${X2}/OTHER_DISCS.md`);
-  const R: Registry = loadRegistry();
-  const commit: string = sourceCommit();
+  const repo: string = sourceRepo();
+  function readSource(relativePath: string): string {
+    return fs.readFileSync(path.join(repo, relativePath), "utf8").replace(/\r\n/g, "\n");
+  }
+  const acDoc: string = readSource(`${AC_PLUS_DIR}/CHEATS.md`);
+  const x2Doc: string = readSource(`${X2_DIR}/CHEATS.md`);
+  const familyDoc: string = readSource(`${X2_DIR}/FAMILY.md`);
+  const otherDiscsDoc: string = readSource(`${X2_DIR}/OTHER_DISCS.md`);
+  const registry: Registry = parseRegistry(readSource(`${AC_PLUS_DIR}/registry.yaml`));
+  const commit: string = sourceCommit(repo);
 
   // ----- AC+ matrix: status per code title -----
-  const matrixDoc: string = between(acDoc, /<!-- MATRIX -->/, /<!-- \/MATRIX -->/);
+  const matrixDoc: string = textBetween(acDoc, /<!-- MATRIX -->/, /<!-- \/MATRIX -->/);
   const matrix: ReadonlyMap<string, MatrixEntry> = new Map(
-    tableWith(matrixDoc, /Code\|Code types\|Status/).rows.map(
-      (r: readonly string[]): [string, { status: Status; raw: string; level: string | undefined; checked: string }] => [
-        stripMd(r[0]),
-        { status: statusOf(r[2]), raw: stripMd(r[2]), level: r[3], checked: cleanNote(r[4]) },
-      ],
-    ),
+    tableWith(matrixDoc, /Code\|Code types\|Status/).rows.map((row: readonly string[]): [string, MatrixEntry] => [
+      stripMarkdown(row[0]),
+      { status: statusOf(row[2]), raw: stripMarkdown(row[2]), level: row[3], checked: cleanNote(row[4]) },
+    ]),
   );
   const verification: Table = tableWith(acDoc, /Code\|Status\|Measured result/);
 
-  const testEnv: Registry["reg"]["test_environment"] = R.reg.test_environment;
+  const testEnvironment: Registry["metadata"]["test_environment"] = registry.metadata.test_environment;
   const testSetup: ReadonlyArray<readonly [string, string]> = [
-    ["Emulator", testEnv.emulator],
+    ["Emulator", testEnvironment.emulator],
     ["Starting point", "Fresh save at the main menu"],
-    ["Cheat devices", testEnv.hardware_devices],
+    ["Cheat devices", testEnvironment.hardware_devices],
   ];
 
   // ----- AC+ shared prose -----
-  const priorWork: string = between(acDoc, /\*\*Prior work\.\*\*/, /\nThis document adds the following:/);
-  const sources: string = section(acDoc, "## Prior work and sources");
+  const priorWork: string = textBetween(acDoc, /\*\*Prior work\.\*\*/, /\nThis document adds the following:/);
+  const sources: string = sectionBody(acDoc, "## Prior work and sources");
   const sourcesTable: Table = tableWith(sources, /Source\|Author, date/);
-  const lee4Where: Table = tableWith(sources, /lee4 code\|2014/);
+  const lee4Writes: Table = tableWith(sources, /lee4 code\|2014/);
   const lee4Tests: Table = tableWith(sources, /2014 \(lee4's post\)/);
-  const masterCode: string | undefined = (acDoc.match(/master code, `([0-9A-F ]+)`/) || [])[1];
+  const masterCode: string | undefined = acDoc.match(/master code, `([0-9A-F ]+)`/)?.[1];
   if (!masterCode) throw new Error("master code not found");
-  const sideEffect: string = between(sources, /\*\*The SE\/VOICE side effect, explained/, /\*\*Both versions tested/);
-  const verdict: string = requireValue(between(sources, /\*\*Verdict: /, null).split("\n\n")[0], "verdict");
+  const sideEffect: string = textBetween(sources, /\*\*The SE\/VOICE side effect, explained/, /\*\*Both versions tested/);
+  const verdict: string = requireValue(textBetween(sources, /\*\*Verdict: /, null).split("\n\n")[0], "verdict");
   const playTime: Table = tableWith(acDoc, /Play time\|Unlock/);
-  const timeSep: string = between(acDoc, /Separately, the stage select grants/, /\n\n/);
-  const stageTable: Table = tableWith(section(acDoc, "## Stage table"), /Stage\|Accent Core/);
-  const stageFlags: Table = tableWith(between(acDoc, /<!-- STAGEFLAGS -->/, /<!-- \/STAGEFLAGS -->/), /Entry\|Stage\|Enabled by/);
+  const stageSelectPlayTime: string = textBetween(acDoc, /Separately, the stage select grants/, /\n\n/);
+  const stageTable: Table = tableWith(sectionBody(acDoc, "## Stage table"), /Stage\|Accent Core/);
+  const stageFlags: Table = tableWith(textBetween(acDoc, /<!-- STAGEFLAGS -->/, /<!-- \/STAGEFLAGS -->/), /Entry\|Stage\|Enabled by/);
   const stageStates: Table = tableWith(acDoc, /State\|Selectable entries/);
   const fieldMap: Table = tableWith(acDoc, /Offset\|Size\|Meaning/);
   const quickStart: Table = tableWith(acDoc, /You want\|Enable\|Then/);
-  const charactersMd: string = section(acDoc, "## Characters");
-  const caveatsMd: string = section(acDoc, "## Caveats");
-  const howTo: string = section(acDoc, "## How to use the codes");
-  const accept: string = between(acDoc, /\*\*Forced-only entries load and play/, /\*\*Guide claims, checked against this disc\.\*\*/);
-  const jpDoc: string = section(acDoc, "## Japanese releases (separate findings)");
+  const charactersMd: string = sectionBody(acDoc, "## Characters");
+  const caveatsMd: string = sectionBody(acDoc, "## Caveats");
+  const howTo: string = sectionBody(acDoc, "## How to use the codes");
+  const forcedEntries: string = textBetween(
+    acDoc,
+    /\*\*Forced-only entries load and play/,
+    /\*\*Guide claims, checked against this disc\.\*\*/,
+  );
+  const jpDoc: string = sectionBody(acDoc, "## Japanese releases (separate findings)");
   const jpRuntime: Table = tableWith(jpDoc, /Test\|Result\|Level/);
-  const jpSingle: string = between(jpDoc, /The single-character codes run on/, /\n\n/).replace(/\n/g, " ");
-  const jpAppend: string = scrub(between(jpDoc, /\*\*Append Edition: not run\.\*\*/, /\n\n/).replace(/\n/g, " "));
-  const jpIdent: Table = tableWith(jpDoc, /Release\|Disc \(Redump\)/);
-  const guideClaims: string = between(
+  const jpSingleCharacter: string = textBetween(jpDoc, /The single-character codes run on/, /\n\n/).replace(/\n/g, " ");
+  const jpAppendEdition: string = scrub(textBetween(jpDoc, /\*\*Append Edition: not run\.\*\*/, /\n\n/).replace(/\n/g, " "));
+  const jpIdentity: Table = tableWith(jpDoc, /Release\|Disc \(Redump\)/);
+  const guideClaims: string = textBetween(
     acDoc,
     /\*\*Guide claims, checked against this disc\.\*\*/,
     /\*\*Are the hidden entries copies\?\*\*/,
   ).replace(/^\*\*Guide claims[^*]*\*\*\s*/, "");
 
   // ----- Release identity tables (other docs) -----
-  const famIdent: Table = tableWith(famDoc, /Release\|ELF, version, PCSX2 CRC/);
-  const othIdent: Table = tableWith(othDoc, /Game\|Serial, version/);
-  const famRows: ReadonlyArray<readonly string[]> = tableWith(famDoc, /Release\|Code\|Status\|Seen/).rows;
-  const famMaps: Readonly<Record<string, string>> = Object.fromEntries(
-    [...famDoc.matchAll(/^- \*\*([^*]+):\*\*([\s\S]*?)(?=^- \*\*|^- Taikenban|^## )/gm)].map((m: RegExpExecArray): [string, string] => [
-      requireValue(m[1], "family name").trim(),
-      `**${requireValue(m[1], "family name").trim()}:**${m[2]}`.trim(),
-    ]),
+  const familyIdentity: Table = tableWith(familyDoc, /Release\|ELF, version, PCSX2 CRC/);
+  const otherIdentity: Table = tableWith(otherDiscsDoc, /Game\|Serial, version/);
+  const familyRows: ReadonlyArray<readonly string[]> = tableWith(familyDoc, /Release\|Code\|Status\|Seen/).rows;
+  const familyMaps: Readonly<Record<string, string>> = Object.fromEntries(
+    [...familyDoc.matchAll(/^- \*\*([^*]+):\*\*([\s\S]*?)(?=^- \*\*|^- Taikenban|^## )/gm)].map(
+      (familyMatch: RegExpExecArray): [string, string] => [
+        requireValue(familyMatch[1], "family name").trim(),
+        `**${requireValue(familyMatch[1], "family name").trim()}:**${familyMatch[2]}`.trim(),
+      ],
+    ),
   );
 
   // ===== Release factory =====
   let releases: Release[] = [];
   function addRelease(input: ReleaseInput): Release {
-    const slug: string = input.slug ?? slugify(`${regionShort(input.serial)}-${input.serial}`);
+    const slug: string = input.slug ?? slugify(`${regionCode(input.serial)}-${input.serial}`);
     const game: GameDefinition = requireValue(
-      GAME_DEFS.find((candidate: GameDefinition): boolean => candidate.id === input.gameId),
+      GAME_DEFINITIONS.find((candidate: GameDefinition): boolean => candidate.id === input.gameId),
       "game definition",
     );
     const url: string = `/games/${game.slug}/${slug}/`;
@@ -230,8 +231,8 @@ export function loadSite(): Site {
       slug,
       game,
       url,
-      region: regionOf(input.serial),
-      regionShort: regionShort(input.serial),
+      region: regionName(input.serial),
+      regionCode: regionCode(input.serial),
       counts: countCodes(codes),
       codes: [],
       patchSections: 0,
@@ -241,18 +242,18 @@ export function loadSite(): Site {
     return release;
   }
 
-  function ident(tbl: Table, rowRe: RegExp, serial: string, crc: string): readonly string[] {
-    const row: readonly string[] | undefined = tbl.rows.find((r: readonly string[]): boolean =>
-      rowRe.test(requireValue(r[0], "row label")),
+  function identityRow(table: Table, rowPattern: RegExp, serial: string, crc: string): readonly string[] {
+    const row: readonly string[] | undefined = table.rows.find((candidate: readonly string[]): boolean =>
+      rowPattern.test(requireValue(candidate[0], "row label")),
     );
-    if (!row) throw new Error(`identity row not found: ${rowRe}`);
+    if (!row) throw new Error(`identity row not found: ${rowPattern}`);
     if (
       !row.join(" ").includes(serial.replace("-", "_").replace(/^(\w{4}_)(\d{3})(\d{2})$/, "$1$2.$3")) &&
       !row.join(" ").includes(serial)
     ) {
       // serial may appear as SLUS_204.36 or SLUS-20436
-      const alt: string = serial.replace("-", "_").replace(/(\d{3})(\d{2})$/, "$1.$2");
-      if (!row.join(" ").includes(alt)) throw new Error(`serial ${serial} not in row ${requireValue(row[0], "source row field")}`);
+      const dottedSerial: string = serial.replace("-", "_").replace(/(\d{3})(\d{2})$/, "$1.$2");
+      if (!row.join(" ").includes(dottedSerial)) throw new Error(`serial ${serial} not in row ${requireValue(row[0], "source row field")}`);
     }
     if (!row.join(" ").toUpperCase().includes(crc)) throw new Error(`crc ${crc} not in row ${requireValue(row[0], "source row field")}`);
     return row;
@@ -260,56 +261,61 @@ export function loadSite(): Site {
 
   // ----- AC+ US -----
   {
-    const pn: ParsedPnach = parsePnach(read(`${AC}/F233A433.pnach`));
-    const R0: Registry["reg"]["release"] = R.reg.release;
-    let codes: CodeDraft[] = pn.sections.map((s: PnachSection): LegacyCode => {
-      const d: DerivedFinding | undefined = R.derived.get(s.name);
-      if (!d) throw new Error(`pnach section without registry record: ${s.name}`);
-      if (d.raw_code.join("|") !== s.raw.join("|")) throw new Error(`raw code differs between registry and pnach: ${s.name}`);
-      const m: MatrixEntry | undefined = matrix.get(s.name);
-      if (!m) throw new Error(`no matrix row: ${s.name}`);
-      const v: readonly string[] | undefined = verification.rows.find((r: readonly string[]): boolean => stripMd(r[0]) === s.name);
-      const checked: string = m.checked && m.checked !== "-" ? m.checked : v ? cleanNote(v[2]) : "";
-      return makeCode(s, { level: d.evidence_level, status: m.status, checked, regId: d.finding_id });
+    const pnach: ParsedPnach = parsePnach(readSource(`${AC_PLUS_DIR}/F233A433.pnach`));
+    const pinnedRelease: Registry["metadata"]["release"] = registry.metadata.release;
+    let codes: CodeDraft[] = pnach.sections.map((section: PnachSection): LegacyCode => {
+      const derived: DerivedFinding | undefined = registry.derived.get(section.name);
+      if (!derived) throw new Error(`pnach section without registry record: ${section.name}`);
+      if (derived.raw_code.join("|") !== section.raw.join("|"))
+        throw new Error(`raw code differs between registry and pnach: ${section.name}`);
+      const matrixEntry: MatrixEntry | undefined = matrix.get(section.name);
+      if (!matrixEntry) throw new Error(`no matrix row: ${section.name}`);
+      const verificationRow: readonly string[] | undefined = verification.rows.find(
+        (row: readonly string[]): boolean => stripMarkdown(row[0]) === section.name,
+      );
+      const checked: string =
+        matrixEntry.checked && matrixEntry.checked !== "-" ? matrixEntry.checked : verificationRow ? cleanNote(verificationRow[2]) : "";
+      return makeCode(section, { level: derived.evidence_level, status: matrixEntry.status, checked, registryId: derived.finding_id });
     });
     // lee4 published codes
-    let byFeature: Map<string, PublishedFinding> = new Map(
-      R.published.map((p: PublishedFinding): [string, PublishedFinding] => [p.finding_id, p]),
+    let findingsById: Map<string, PublishedFinding> = new Map(
+      registry.published.map((finding: PublishedFinding): [string, PublishedFinding] => [finding.finding_id, finding]),
     );
-    for (const p of R.published) {
-      const yr: string = String(p.source_date).slice(0, 4);
-      const key: string = `lee4 ${yr}: ${p.title}`;
-      const m: MatrixEntry | undefined = matrix.get(key);
-      if (!m) throw new Error(`no matrix row: ${key}`);
-      const mate: PublishedFinding | null | undefined = p.conflicts_with?.[0] ? byFeature.get(p.conflicts_with[0]) : null;
-      const sectionName: string = `${key}`;
+    for (const finding of registry.published) {
+      const year: string = String(finding.source_date).slice(0, 4);
+      const key: string = `lee4 ${year}: ${finding.title}`;
+      const matrixEntry: MatrixEntry | undefined = matrix.get(key);
+      if (!matrixEntry) throw new Error(`no matrix row: ${key}`);
+      const counterpart: PublishedFinding | null | undefined = finding.conflicts_with?.[0]
+        ? findingsById.get(finding.conflicts_with[0])
+        : null;
       const pnachText: string =
-        `[${sectionName}]\nauthor=lee4\n` +
-        (yr === "2009" ? "comment=Superseded: every save address is 8 bytes below the 2014 version.\n" : "") +
-        p.generated_pnach.join("\n");
+        `[${key}]\nauthor=lee4\n` +
+        (year === "2009" ? "comment=Superseded: every save address is 8 bytes below the 2014 version.\n" : "") +
+        finding.generated_pnach.join("\n");
       codes.push({
-        id: `lee4-${yr}-${slugify(p.title)}`,
+        id: `lee4-${year}-${slugify(finding.title)}`,
         title: key,
-        shortTitle: p.title,
-        group: yr === "2014" ? "lee4, 2014" : "lee4, 2009 (superseded)",
-        effect: scrub(p.provenance_note),
-        raw: p.raw_code,
+        shortTitle: finding.title,
+        group: year === "2014" ? "lee4, 2014" : "lee4, 2009 (superseded)",
+        effect: scrub(finding.provenance_note),
+        raw: finding.raw_code,
         pnach: pnachText,
-        author: p.source_author,
-        status: m.status,
-        statusNote: m.raw.replace(/\*\*/g, ""),
-        level: p.evidence_level,
-        checked: m.checked,
-        hardware: HW,
+        author: finding.source_author,
+        status: matrixEntry.status,
+        statusNote: matrixEntry.raw.replace(/\*\*/g, ""),
+        level: finding.evidence_level,
+        checked: matrixEntry.checked,
+        hardware: HARDWARE_STATUS,
         published: {
-          author: p.source_author,
-          date: String(p.source_date),
-          url: p.source_url,
-          ...(p.source_archive === undefined ? {} : { archive: p.source_archive }),
-          ...(p.source_mirror === undefined ? {} : { mirror: p.source_mirror }),
-          year: yr,
+          author: finding.source_author,
+          date: String(finding.source_date),
+          url: finding.source_url,
+          ...(finding.source_archive === undefined ? {} : { archive: finding.source_archive }),
+          ...(finding.source_mirror === undefined ? {} : { mirror: finding.source_mirror }),
+          year,
         },
-        mateId: mate ? `lee4-${String(mate.source_date).slice(0, 4)}-${slugify(mate.title)}` : null,
+        counterpartId: counterpart ? `lee4-${String(counterpart.source_date).slice(0, 4)}-${slugify(counterpart.title)}` : null,
       });
     }
     addRelease({
@@ -318,11 +324,17 @@ export function loadSite(): Site {
       label: "US",
       serial: "SLUS-21847",
       version: "1.00",
-      crc: R0.elf.pcsx2_crc,
-      elf: { name: R0.elf.name, size: R0.elf.size, sha256: R0.elf.sha256 },
-      disc: { redump: R0.disc.redump_url, crc32: R0.disc.crc32, sha1: R0.disc.sha1, size: R0.disc.size, date: R0.disc.exe_date },
+      crc: pinnedRelease.elf.pcsx2_crc,
+      elf: { name: pinnedRelease.elf.name, size: pinnedRelease.elf.size, sha256: pinnedRelease.elf.sha256 },
+      disc: {
+        redump: pinnedRelease.disc.redump_url,
+        crc32: pinnedRelease.disc.crc32,
+        sha1: pinnedRelease.disc.sha1,
+        size: pinnedRelease.disc.size,
+        date: pinnedRelease.disc.exe_date,
+      },
       pnachFile: "F233A433.pnach",
-      pnachText: scrub(read(`${AC}/F233A433.pnach`)),
+      pnachText: scrub(readSource(`${AC_PLUS_DIR}/F233A433.pnach`)),
       codes,
       hasLee4: true,
       unlock: { kind: "acplus" },
@@ -330,86 +342,87 @@ export function loadSite(): Site {
   }
 
   // ----- AC+ JP / Append -----
-  function jpRule(title: string, append: boolean): CodeEvidence {
-    if (append) return { status: "NOT TESTED", level: "S1", checked: jpAppend };
-    function row(re: RegExp): readonly string[] {
+  function japaneseEvidence(title: string, isAppendEdition: boolean): CodeEvidence {
+    if (isAppendEdition) return { status: "NOT TESTED", level: "S1", checked: jpAppendEdition };
+    function runtimeRow(titlePattern: RegExp): readonly string[] {
       return requireValue(
-        jpRuntime.rows.find((r: readonly string[]): boolean => re.test(requireValue(r[0], "JP row title"))),
+        jpRuntime.rows.find((row: readonly string[]): boolean => titlePattern.test(requireValue(row[0], "JP row title"))),
         "JP runtime row",
       );
     }
     if (/^Unlock everything$/.test(title)) {
-      const a: readonly string[] = row(/^\*\*Unlock everything\*\*$/);
-      const b: readonly string[] = row(/^Saved with/);
-      return { status: "VERIFIED", level: "S4", checked: `${stripMd(a[1])} ${stripMd(b[1])}` };
+      const unlockRow: readonly string[] = runtimeRow(/^\*\*Unlock everything\*\*$/);
+      const savedRow: readonly string[] = runtimeRow(/^Saved with/);
+      return { status: "VERIFIED", level: "S4", checked: `${stripMarkdown(unlockRow[1])} ${stripMarkdown(savedRow[1])}` };
     }
     if (/^Stage select: all 34/.test(title) || /^Stage select: hidden stages too/.test(title)) {
-      const a: readonly string[] = row(/Stage select: all 34/);
-      return { status: "VERIFIED", level: "S2", checked: stripMd(a[1]) };
+      const stageRow: readonly string[] = runtimeRow(/Stage select: all 34/);
+      return { status: "VERIFIED", level: "S2", checked: stripMarkdown(stageRow[1]) };
     }
-    return { status: "INFERRED", level: "S1", checked: jpSingle };
+    return { status: "INFERRED", level: "S1", checked: jpSingleCharacter };
   }
-  const jpReleases: ReadonlyArray<readonly [string, string, string, boolean, string]> = [
-    ["SLPM-66965", "61FE9C13", "SLPM-66965_61FE9C13.pnach", false, "JP"],
-    ["SLPM-66964", "45D92B79", "SLPM-66964_45D92B79.pnach", true, "JP Append"],
+  const japaneseReleases: readonly JapaneseRelease[] = [
+    { serial: "SLPM-66965", crc: "61FE9C13", file: "SLPM-66965_61FE9C13.pnach", isAppendEdition: false, label: "JP" },
+    { serial: "SLPM-66964", crc: "45D92B79", file: "SLPM-66964_45D92B79.pnach", isAppendEdition: true, label: "JP Append" },
   ];
-  for (let [serial, crc, file, append, label] of jpReleases) {
-    const pins: ReleasePin | undefined = R.releasePins.find((p: ReleasePin): boolean => p.serial === serial);
-    if (!pins || pins.elf_crc !== crc) throw new Error(`release pin mismatch ${serial}`);
+  for (const { serial, crc, file, isAppendEdition, label } of japaneseReleases) {
+    const pin: ReleasePin | undefined = registry.releasePins.find((candidate: ReleasePin): boolean => candidate.serial === serial);
+    if (!pin || pin.elf_crc !== crc) throw new Error(`release pin mismatch ${serial}`);
     const row: readonly string[] = requireValue(
-      jpIdent.rows.find((r: readonly string[]): boolean => requireValue(r[0], "release serial").includes(serial)),
+      jpIdentity.rows.find((candidate: readonly string[]): boolean => requireValue(candidate[0], "release serial").includes(serial)),
       "JP identity",
     );
-    const pn: ParsedPnach = parsePnach(read(`${AC}/jp/${file}`));
-    let codes: CodeDraft[] = pn.sections.map((s: PnachSection): LegacyCode => {
-      if (!R.derived.has(s.name)) throw new Error(`JP section not in US registry: ${s.name}`);
-      return makeCode(s, jpRule(s.name, append));
+    const pnach: ParsedPnach = parsePnach(readSource(`${AC_PLUS_DIR}/jp/${file}`));
+    let codes: CodeDraft[] = pnach.sections.map((section: PnachSection): LegacyCode => {
+      if (!registry.derived.has(section.name)) throw new Error(`JP section not in US registry: ${section.name}`);
+      return makeCode(section, japaneseEvidence(section.name, isAppendEdition));
     });
     addRelease({
       gameId: "acplus",
       slug: `${label.startsWith("JP A") ? "jp-append" : "jp"}-${serial.toLowerCase()}`,
       label,
       serial,
-      version: pins.game_version,
+      version: pin.game_version,
       crc,
-      elf: { name: requireValue(requireValue(row[2], "source row field").split(",")[0], "ELF name").trim(), sha256: pins.elf_sha256 },
-      disc: { redump: `http://redump.org/disc/${pins.redump_id}/`, crc32: pins.disc_crc32, sha1: pins.disc_sha1 },
+      elf: { name: requireValue(requireValue(row[2], "source row field").split(",")[0], "ELF name").trim(), sha256: pin.elf_sha256 },
+      disc: { redump: `http://redump.org/disc/${pin.redump_id}/`, crc32: pin.disc_crc32, sha1: pin.disc_sha1 },
       pnachFile: file,
-      pnachText: read(`${AC}/jp/${file}`),
+      pnachText: readSource(`${AC_PLUS_DIR}/jp/${file}`),
       codes,
-      unlock: { kind: "acplus", jp: true, append },
-      note: append ? jpAppend : null,
+      unlock: { kind: "acplus", isJapanese: true, isAppendEdition },
+      note: isAppendEdition ? jpAppendEdition : null,
     });
   }
 
   // ----- X2 US -----
   {
-    const pn: ParsedPnach = parsePnach(read(`${X2}/SLUS-20436_913FBFB8.pnach`));
-    const v: ReadonlyArray<readonly string[]> = tableWith(x2Doc, /Code\|Status\|Measured result/).rows;
-    function find(re: RegExp): readonly string[] | undefined {
-      return v.find((r: readonly string[]): boolean => re.test(stripMd(r[0])));
+    const pnach: ParsedPnach = parsePnach(readSource(`${X2_DIR}/SLUS-20436_913FBFB8.pnach`));
+    const verificationRows: ReadonlyArray<readonly string[]> = tableWith(x2Doc, /Code\|Status\|Measured result/).rows;
+    function findRow(titlePattern: RegExp): readonly string[] | undefined {
+      return verificationRows.find((row: readonly string[]): boolean => titlePattern.test(stripMarkdown(row[0])));
     }
-    function rowFor(t: string): readonly string[] | undefined {
-      if (/^Unlock everything/.test(t)) return find(/^Unlock everything/);
-      if (/^Unlock (Robo-Ky|Kliff|Justice)$/.test(t)) return find(/Robo-Ky \/ Kliff \/ Justice/);
-      if (t === "Unlock GG mode") return find(/^Unlock GG mode/);
-      if (t === "Unlock all SP colours") return find(/^Unlock all SP colours/);
-      if (t === "Unlock all EX characters") return find(/^Unlock all EX characters/);
-      if (t === "Unlock SP Sol Badguy") return find(/^Unlock all SP colours/);
-      if (t === "Unlock EX Sol Badguy") return find(/^Unlock all EX characters/);
-      if (t === "Max play time") return find(/^Max play time/);
-      return find(/^Unlock EX \/ SP \(one character\)/);
+    function rowFor(title: string): readonly string[] | undefined {
+      if (/^Unlock everything/.test(title)) return findRow(/^Unlock everything/);
+      if (/^Unlock (Robo-Ky|Kliff|Justice)$/.test(title)) return findRow(/Robo-Ky \/ Kliff \/ Justice/);
+      if (title === "Unlock GG mode") return findRow(/^Unlock GG mode/);
+      if (title === "Unlock all SP colours") return findRow(/^Unlock all SP colours/);
+      if (title === "Unlock all EX characters") return findRow(/^Unlock all EX characters/);
+      if (title === "Unlock SP Sol Badguy") return findRow(/^Unlock all SP colours/);
+      if (title === "Unlock EX Sol Badguy") return findRow(/^Unlock all EX characters/);
+      if (title === "Max play time") return findRow(/^Max play time/);
+      return findRow(/^Unlock EX \/ SP \(one character\)/);
     }
-    let codes: CodeDraft[] = pn.sections.map((s: PnachSection): LegacyCode => {
-      const r: readonly string[] | undefined = rowFor(s.name);
-      if (!r) throw new Error(`X2 status row missing for ${s.name}`);
-      const st: Status = statusOf(r[1]);
-      let checked: string = stripMd(r[2]);
-      const forSol: boolean = /for Sol/.test(stripMd(r[1])) && !/Sol Badguy$/.test(s.name) && /all (EX|SP)/.test(s.name);
-      if (forSol) checked = `Checked with Sol only. ${checked}`;
-      return makeCode(s, { status: st, level: levelOf(r[2]) ?? levelOf(r[1]), checked });
+    let codes: CodeDraft[] = pnach.sections.map((section: PnachSection): LegacyCode => {
+      const row: readonly string[] | undefined = rowFor(section.name);
+      if (!row) throw new Error(`X2 status row missing for ${section.name}`);
+      const status: Status = statusOf(row[1]);
+      let checked: string = stripMarkdown(row[2]);
+      const isCheckedWithSolOnly: boolean =
+        /for Sol/.test(stripMarkdown(row[1])) && !/Sol Badguy$/.test(section.name) && /all (EX|SP)/.test(section.name);
+      if (isCheckedWithSolOnly) checked = `Checked with Sol only. ${checked}`;
+      return makeCode(section, { status, level: levelOf(row[2]) ?? levelOf(row[1]), checked });
     });
-    const row: readonly string[] = ident(othIdent, /X2/, "SLUS-20436", "913FBFB8");
+    const row: readonly string[] = identityRow(otherIdentity, /X2/, "SLUS-20436", "913FBFB8");
     addRelease({
       gameId: "xx",
       slug: "us-slus-20436",
@@ -417,56 +430,58 @@ export function loadSite(): Site {
       serial: "SLUS-20436",
       version: "1.00",
       crc: "913FBFB8",
-      elf: { name: "SLUS_204.36", sha256: stripMd(requireValue(row[3], "source row field")) },
-      imageInfo: stripMd(requireValue(row[4], "source row field")),
+      elf: { name: "SLUS_204.36", sha256: stripMarkdown(requireValue(row[3], "source row field")) },
+      imageInfo: stripMarkdown(requireValue(row[4], "source row field")),
       pnachFile: "SLUS-20436_913FBFB8.pnach",
-      pnachText: read(`${X2}/SLUS-20436_913FBFB8.pnach`),
+      pnachText: readSource(`${X2_DIR}/SLUS-20436_913FBFB8.pnach`),
       codes,
       unlock: { kind: "x2" },
     });
   }
 
   // ----- Family releases (AC US, Slash JP, #Reload KR/JP, GGXX JP) -----
-  function famRow(relRe: RegExp, codeRe: RegExp): readonly string[] {
+  function familyRow(releasePattern: RegExp, codePattern: RegExp): readonly string[] {
     return requireValue(
-      famRows.find((r: readonly string[]): boolean => relRe.test(stripMd(r[0])) && codeRe.test(stripMd(r[1]))),
+      familyRows.find(
+        (row: readonly string[]): boolean => releasePattern.test(stripMarkdown(row[0])) && codePattern.test(stripMarkdown(row[1])),
+      ),
       "family status row",
     );
   }
-  function famStatus(row: readonly string[], over: Partial<CodeEvidence> = {}): CodeEvidence {
-    const st: Status = /prior art/i.test(requireValue(row[2], "source row field")) ? "VERIFIED" : statusOf(row[2]);
-    const lv: EvidenceLevel | null = levelOf(requireValue(row[2], "source row field"));
-    const seen: string = stripMd(requireValue(row[3], "source row field"));
+  function familyEvidence(row: readonly string[], overrides: Partial<CodeEvidence> = {}): CodeEvidence {
+    const status: Status = /prior art/i.test(requireValue(row[2], "source row field")) ? "VERIFIED" : statusOf(row[2]);
+    const level: EvidenceLevel | null = levelOf(requireValue(row[2], "source row field"));
+    const seen: string = stripMarkdown(requireValue(row[3], "source row field"));
     return {
-      status: st,
-      level: lv,
-      checked: cleanNote(`${stripMd(requireValue(row[2], "source row field")).replace(/\*/g, "")}${seen ? ". " + seen : ""}`),
-      ...over,
+      status,
+      level,
+      checked: cleanNote(`${stripMarkdown(requireValue(row[2], "source row field")).replace(/\*/g, "")}${seen ? ". " + seen : ""}`),
+      ...overrides,
     };
   }
-  function persist(relRe: RegExp): readonly string[] {
-    return famRow(relRe, /^Persistence/);
+  function persistenceRow(releasePattern: RegExp): readonly string[] {
+    return familyRow(releasePattern, /^Persistence/);
   }
-  const lastInferred: readonly string[] | undefined = famRows.find((r: readonly string[]): boolean =>
-    /#Reload \(Japan\), GGXX/.test(stripMd(r[0])),
+  const lastInferred: readonly string[] | undefined = familyRows.find((row: readonly string[]): boolean =>
+    /#Reload \(Japan\), GGXX/.test(stripMarkdown(row[0])),
   );
-  let fam: readonly FamilyDefinition[] = [
+  let families: readonly FamilyDefinition[] = [
     {
       serial: "SLUS-21652",
       crc: "A8A76AAC",
       file: "SLUS-21652_A8A76AAC.pnach",
       gameId: "ac",
       label: "US",
-      ver: "1.00",
-      rowRe: /^Accent Core \(US\)/,
+      version: "1.00",
+      rowPattern: /^Accent Core \(US\)/,
       mapKey: "Accent Core (US)",
-      identRe: /^Accent Core \(US\)/,
-      rule: (t: string, rel: RegExp): CodeEvidence | null => {
-        if (t === "Unlock all EX characters") return famStatus(famRow(rel, /^Unlock all EX/));
-        if (t === "Max play time") return famStatus(famRow(rel, /^Max play time/));
-        if (t === "Unlock gold/black Sol Badguy" || t === "Unlock gold/black Ky Kiske")
-          return famStatus(famRow(rel, /^Unlock gold\/black, single/), { status: "VERIFIED" });
-        if (t === "Unlock all gold and black colours") return famStatus(persist(rel), { status: "VERIFIED" });
+      identityPattern: /^Accent Core \(US\)/,
+      rule: (title: string, statusRow: RegExp): CodeEvidence | null => {
+        if (title === "Unlock all EX characters") return familyEvidence(familyRow(statusRow, /^Unlock all EX/));
+        if (title === "Max play time") return familyEvidence(familyRow(statusRow, /^Max play time/));
+        if (title === "Unlock gold/black Sol Badguy" || title === "Unlock gold/black Ky Kiske")
+          return familyEvidence(familyRow(statusRow, /^Unlock gold\/black, single/), { status: "VERIFIED" });
+        if (title === "Unlock all gold and black colours") return familyEvidence(persistenceRow(statusRow), { status: "VERIFIED" });
         return null;
       },
     },
@@ -476,14 +491,14 @@ export function loadSite(): Site {
       file: "SLPM-66333_06DE61E0.pnach",
       gameId: "slash",
       label: "JP",
-      ver: "1.01",
-      rowRe: /^Slash \(Japan\)/,
+      version: "1.01",
+      rowPattern: /^Slash \(Japan\)/,
       mapKey: "Slash (Japan)",
-      identRe: /^Slash \(Japan\)/,
-      rule: (t: string, rel: RegExp): CodeEvidence => {
-        if (t === "Unlock Kliff and Justice") return famStatus(famRow(rel, /^Unlock Kliff/));
-        if (t === "Unlock GG mode and EX characters") return famStatus(famRow(rel, /^Unlock GG mode/));
-        return famStatus(persist(rel), { status: "VERIFIED" });
+      identityPattern: /^Slash \(Japan\)/,
+      rule: (title: string, statusRow: RegExp): CodeEvidence => {
+        if (title === "Unlock Kliff and Justice") return familyEvidence(familyRow(statusRow, /^Unlock Kliff/));
+        if (title === "Unlock GG mode and EX characters") return familyEvidence(familyRow(statusRow, /^Unlock GG mode/));
+        return familyEvidence(persistenceRow(statusRow), { status: "VERIFIED" });
       },
     },
     {
@@ -492,14 +507,14 @@ export function loadSite(): Site {
       file: "SLKA-25070_90F292F7.pnach",
       gameId: "reload",
       label: "KR",
-      ver: "1.01",
-      rowRe: /^#Reload \(Korea\)/,
+      version: "1.01",
+      rowPattern: /^#Reload \(Korea\)/,
       mapKey: "#Reload (Korea)",
-      identRe: /^#Reload \(Korea\)/,
-      rule: (t: string, rel: RegExp): CodeEvidence | null => {
-        if (t === "Unlock hidden characters and GG mode") return famStatus(famRow(rel, /^Unlock hidden/));
-        if (t === "Unlock all SP colours") return famStatus(famRow(rel, /^SP colour, single/), { status: "VERIFIED" });
-        if (t === "Unlock all EX characters") return famStatus(persist(rel), { status: "VERIFIED" });
+      identityPattern: /^#Reload \(Korea\)/,
+      rule: (title: string, statusRow: RegExp): CodeEvidence | null => {
+        if (title === "Unlock hidden characters and GG mode") return familyEvidence(familyRow(statusRow, /^Unlock hidden/));
+        if (title === "Unlock all SP colours") return familyEvidence(familyRow(statusRow, /^SP colour, single/), { status: "VERIFIED" });
+        if (title === "Unlock all EX characters") return familyEvidence(persistenceRow(statusRow), { status: "VERIFIED" });
         return null;
       },
     },
@@ -509,12 +524,12 @@ export function loadSite(): Site {
       file: "SLPS-25261_21FCC394.pnach",
       gameId: "reload",
       label: "JP",
-      ver: "1.01",
-      rowRe: /^#Reload \(Japan\)$/,
+      version: "1.01",
+      rowPattern: /^#Reload \(Japan\)$/,
       mapKey: "#Reload (Japan)",
-      identRe: /^#Reload \(Japan\)/,
-      rule: (t: string, rel: RegExp): CodeEvidence | null =>
-        t === "Unlock hidden characters and GG mode" ? famStatus(famRow(rel, /^Unlock hidden/)) : null,
+      identityPattern: /^#Reload \(Japan\)/,
+      rule: (title: string, statusRow: RegExp): CodeEvidence | null =>
+        title === "Unlock hidden characters and GG mode" ? familyEvidence(familyRow(statusRow, /^Unlock hidden/)) : null,
       fallback: lastInferred,
     },
     {
@@ -523,65 +538,65 @@ export function loadSite(): Site {
       file: "SLPS-25184_4B6DDB6B.pnach",
       gameId: "xx",
       label: "JP XX",
-      ver: "2.00",
-      rowRe: /^Guilty Gear XX \(Japan\)/,
+      version: "2.00",
+      rowPattern: /^Guilty Gear XX \(Japan\)/,
       mapKey: "Guilty Gear XX (Japan)",
-      identRe: /^Guilty Gear XX \(Japan\)/,
-      rule: (t: string, rel: RegExp): CodeEvidence | null =>
-        t === "Unlock Robo-Ky, Kliff, Justice and GG mode" ? famStatus(famRow(rel, /^Unlock Robo-Ky/)) : null,
+      identityPattern: /^Guilty Gear XX \(Japan\)/,
+      rule: (title: string, statusRow: RegExp): CodeEvidence | null =>
+        title === "Unlock Robo-Ky, Kliff, Justice and GG mode" ? familyEvidence(familyRow(statusRow, /^Unlock Robo-Ky/)) : null,
       fallback: lastInferred,
     },
   ];
-  for (let f of fam) {
-    const text: string = read(`${X2}/${f.file}`);
-    const pn: ParsedPnach = parsePnach(text);
-    let codes: CodeDraft[] = pn.sections.map((s: PnachSection): LegacyCode => {
-      const r: CodeEvidence | null = f.rule(s.name, f.rowRe);
-      if (r) return makeCode(s, r);
-      const fb: readonly string[] | null = f.fallback ?? null;
-      if (fb) return makeCode(s, { status: "INFERRED", level: null, checked: cleanNote(stripMd(fb[3])) });
-      return makeCode(s, { status: "INFERRED", level: null, checked: "" });
+  for (let family of families) {
+    const pnachText: string = readSource(`${X2_DIR}/${family.file}`);
+    const pnach: ParsedPnach = parsePnach(pnachText);
+    let codes: CodeDraft[] = pnach.sections.map((section: PnachSection): LegacyCode => {
+      const evidence: CodeEvidence | null = family.rule(section.name, family.rowPattern);
+      if (evidence) return makeCode(section, evidence);
+      const fallback: readonly string[] | null = family.fallback ?? null;
+      if (fallback) return makeCode(section, { status: "INFERRED", level: null, checked: cleanNote(stripMarkdown(fallback[3])) });
+      return makeCode(section, { status: "INFERRED", level: null, checked: "" });
     });
-    const row: readonly string[] = ident(famIdent, f.identRe, f.serial, f.crc);
+    const row: readonly string[] = identityRow(familyIdentity, family.identityPattern, family.serial, family.crc);
     addRelease({
-      gameId: f.gameId,
-      slug: `${regionShort(f.serial).toLowerCase()}-${f.serial.toLowerCase()}`,
-      label: f.label,
-      serial: f.serial,
-      version: f.ver,
-      crc: f.crc,
+      gameId: family.gameId,
+      slug: `${regionCode(family.serial).toLowerCase()}-${family.serial.toLowerCase()}`,
+      label: family.label,
+      serial: family.serial,
+      version: family.version,
+      crc: family.crc,
       elf: {
         name: requireValue(requireValue(row[1], "source row field").split(",")[0], "ELF name").trim(),
-        sha256: stripMd(requireValue(row[2], "source row field")),
+        sha256: stripMarkdown(requireValue(row[2], "source row field")),
       },
-      imageInfo: stripMd(requireValue(row[3], "source row field")),
-      pnachFile: f.file,
-      pnachText: text,
+      imageInfo: stripMarkdown(requireValue(row[3], "source row field")),
+      pnachFile: family.file,
+      pnachText,
       codes,
-      unlock: { kind: "family", mapKey: f.mapKey, rowRe: f.rowRe },
-      famName: f.mapKey,
+      unlock: { kind: "family", mapKey: family.mapKey, rowPattern: family.rowPattern },
+      familyName: family.mapKey,
     });
   }
 
   // ----- X (US): button code + RAM write -----
-  const xSec: string = section(othDoc, "## Guilty Gear X (US): prior art plus a first lab result").replace(
+  const xSection: string = sectionBody(otherDiscsDoc, "## Guilty Gear X (US): prior art plus a first lab result").replace(
     / One scripted attempt at\s+the button code did not register; the input timing on the title screen still needs work\./,
     "",
   );
-  const xPlusSec: string = section(othDoc, "## Guilty Gear X Plus (JP): password table decoded").replace(
+  const xPlusSection: string = sectionBody(otherDiscsDoc, "## Guilty Gear X Plus (JP): password table decoded").replace(
     /,\s+at\s+0x5C8A20\s+\.\.\.\s+0x5C8A60\.\s+A\s+screen\s+routine(?:\s+\(0x[0-9A-F]+\))?\s+shows\s+one\s+of\s+them\s+when\s+a\s+state\s+value\s+\(\+0x40C\)\s+is\s+3\s+\(KDOKBNZY\),\s+11\s+\(ADROPOUT\)\s+or\s+19\s+\(BLACKMAS\)\./,
     ".",
   );
-  const isukaSec: string = section(othDoc, "## Guilty Gear Isuka (US): pinned, not mapped");
+  const isukaSection: string = sectionBody(otherDiscsDoc, "## Guilty Gear Isuka (US): pinned, not mapped");
   {
-    const row: readonly string[] = ident(othIdent, /^Guilty Gear X \(US\)/, "SLUS-20287", "861BFB2F");
-    const seq: string | undefined = (xSec.match(/\(Down, Right, Right, Up, then Start\)/) || [])[0];
-    if (!seq) throw new Error("X title-screen sequence not found");
-    let ram: RegExpMatchArray | null = xSec.match(/\*\*0x([0-9A-F]{6}) = (\d)\*\*/);
-    if (!ram) throw new Error("X RAM write not found");
-    const ramAddr: string = requireValue(ram[1], "source row field").padStart(8, "0");
-    const ramVal: string = requireValue(ram[2], "source row field").padStart(8, "0");
-    const lab: string = between(xSec, /- The title-screen code works/, /\n  - With the code, Dizzy/)
+    const row: readonly string[] = identityRow(otherIdentity, /^Guilty Gear X \(US\)/, "SLUS-20287", "861BFB2F");
+    const buttonSequence: string | undefined = xSection.match(/\(Down, Right, Right, Up, then Start\)/)?.[0];
+    if (!buttonSequence) throw new Error("X title-screen sequence not found");
+    let ramWrite: RegExpMatchArray | null = xSection.match(/\*\*0x([0-9A-F]{6}) = (\d)\*\*/);
+    if (!ramWrite) throw new Error("X RAM write not found");
+    const ramAddress: string = requireValue(ramWrite[1], "source row field").padStart(8, "0");
+    const ramValue: string = requireValue(ramWrite[2], "source row field").padStart(8, "0");
+    const labResult: string = textBetween(xSection, /- The title-screen code works/, /\n  - With the code, Dizzy/)
       .replace(/^- /, "")
       .replace(/\n\s+/g, " ");
     const codes: readonly LegacyCode[] = [
@@ -595,8 +610,8 @@ export function loadSite(): Site {
         pnach: null,
         status: "VERIFIED",
         level: "S2",
-        checked: `${lab} Community-documented code; see the credits for sources.`,
-        hardware: HW,
+        checked: `${labResult} Community-documented code; see the credits for sources.`,
+        hardware: HARDWARE_STATUS,
         inputNote: "Enter it while PRESS START BUTTON is showing: 20-frame presses, 60 frames apart.",
       },
       {
@@ -604,12 +619,12 @@ export function loadSite(): Site {
         title: "Dizzy and Testament (memory write)",
         group: "Characters and modes",
         effect: "Dizzy and Testament on the select grid. The screen is pixel-identical to the one the title-screen code gives.",
-        raw: [`${ramAddr} ${ramVal}`],
-        pnach: `[Dizzy and Testament (memory write)]\npatch=1,EE,${ramAddr},extended,${ramVal}`,
+        raw: [`${ramAddress} ${ramValue}`],
+        pnach: `[Dizzy and Testament (memory write)]\npatch=1,EE,${ramAddress},extended,${ramValue}`,
         status: "VERIFIED",
         level: "S2",
         checked: "Found by diffing RAM against two code-free cold boots. Not yet checked: whether it is saved to the memory card.",
-        hardware: HW,
+        hardware: HARDWARE_STATUS,
       },
     ];
     addRelease({
@@ -619,55 +634,58 @@ export function loadSite(): Site {
       serial: "SLUS-20287",
       version: "2.00",
       crc: "861BFB2F",
-      elf: { name: "SLUS_202.87", sha256: stripMd(requireValue(row[3], "source row field")) },
-      imageInfo: stripMd(requireValue(row[4], "source row field")),
+      elf: { name: "SLUS_202.87", sha256: stripMarkdown(requireValue(row[3], "source row field")) },
+      imageInfo: stripMarkdown(requireValue(row[4], "source row field")),
       codes,
       pnachFile: null,
       pnachText: null,
-      unlock: { kind: "x", md: xSec },
+      unlock: { kind: "x", markdown: xSection },
     });
   }
 
   // ----- X Plus (JP): passwords -----
   {
-    const row: readonly string[] = ident(othIdent, /^Guilty Gear X Plus/, "SLPS-20137", "4191CC06");
-    const pwTable: Table = tableWith(xPlusSec, /#\|Password\|Action/);
-    const dirTable: Table = tableWith(xPlusSec, /Password\|Direction/);
-    const faq: ReadonlyArray<readonly [string, string]> = [...xPlusSec.matchAll(/^- `([A-Z0-9]{8})`: ([^;.\n]+)/gm)].map(
-      (m: RegExpMatchArray): readonly [string, string] => [requireValue(m[1], "password"), requireValue(m[2], "password description")],
+    const row: readonly string[] = identityRow(otherIdentity, /^Guilty Gear X Plus/, "SLPS-20137", "4191CC06");
+    const passwordTable: Table = tableWith(xPlusSection, /#\|Password\|Action/);
+    const directionTable: Table = tableWith(xPlusSection, /Password\|Direction/);
+    const faqEntries: ReadonlyArray<readonly [string, string]> = [...xPlusSection.matchAll(/^- `([A-Z0-9]{8})`: ([^;.\n]+)/gm)].map(
+      (passwordMatch: RegExpMatchArray): readonly [string, string] => [
+        requireValue(passwordMatch[1], "password"),
+        requireValue(passwordMatch[2], "password description"),
+      ],
     );
-    const faqMap: ReadonlyMap<string, string> = new Map(faq);
-    const levelNote: string = between(xPlusSec, /\*\*What the unlock levels do/, null);
+    const faqDescriptions: ReadonlyMap<string, string> = new Map(faqEntries);
+    const levelNote: string = textBetween(xPlusSection, /\*\*What the unlock levels do/, null);
     const faqLink: '[skuldnoshinpu\'s "Additions FAQ" on GameFAQs](https://gamefaqs.gamespot.com/ps2/536497-guilty-gear-x-plus/faqs/18663)' =
       '[skuldnoshinpu\'s "Additions FAQ" on GameFAQs](https://gamefaqs.gamespot.com/ps2/536497-guilty-gear-x-plus/faqs/18663)';
-    const codes: readonly LegacyCode[] = pwTable.rows.map((r: readonly string[]): LegacyCode => {
-      const pw: string = stripMd(r[1]);
-      const action: string = stripMd(r[2]);
-      const cited: boolean = faqMap.has(pw);
-      const none: boolean = /same path as a wrong password/.test(action);
+    const codes: readonly LegacyCode[] = passwordTable.rows.map((passwordRow: readonly string[]): LegacyCode => {
+      const password: string = stripMarkdown(passwordRow[1]);
+      const action: string = stripMarkdown(passwordRow[2]);
+      const isCited: boolean = faqDescriptions.has(password);
+      const hasNoEffect: boolean = /same path as a wrong password/.test(action);
       return {
-        id: `password-${pw.toLowerCase()}`,
-        title: `Password ${pw}`,
+        id: `password-${password.toLowerCase()}`,
+        title: `Password ${password}`,
         group: "Passwords",
-        effect: cited
-          ? `${requireValue(faqMap.get(pw), "password description").charAt(0).toUpperCase()}${requireValue(faqMap.get(pw), "password description").slice(1)}.`
-          : none
+        effect: isCited
+          ? `${requireValue(faqDescriptions.get(password), "password description").charAt(0).toUpperCase()}${requireValue(faqDescriptions.get(password), "password description").slice(1)}.`
+          : hasNoEffect
             ? "No effect in this build."
-            : pw === "7IRAKUSA"
+            : password === "7IRAKUSA"
               ? "Unlocks Kliff."
               : "Unlocks Justice.",
-        raw: [pw],
+        raw: [password],
         rawKind: "password",
         pnach: null,
         status: "INFERRED",
         level: "S1",
-        checked: cited
+        checked: isCited
           ? `Listed in the community FAQ and present in the executable's password table. ${action}.`
-          : none
+          : hasNoEffect
             ? `Present in the executable's password table; ${action}.`
             : `Not found in English or Japanese searches. Found in the executable's password table: ${action}. The level it sets was tested with a memory write (S2); the password was not typed in.`,
-        credit: cited ? faqLink : null,
-        hardware: HW,
+        credit: isCited ? faqLink : null,
+        hardware: HARDWARE_STATUS,
       };
     });
     addRelease({
@@ -677,18 +695,18 @@ export function loadSite(): Site {
       serial: "SLPS-20137",
       version: "1.03",
       crc: "4191CC06",
-      elf: { name: "SLPS_201.37", sha256: stripMd(requireValue(row[3], "source row field")) },
-      imageInfo: stripMd(requireValue(row[4], "source row field")),
+      elf: { name: "SLPS_201.37", sha256: stripMarkdown(requireValue(row[3], "source row field")) },
+      imageInfo: stripMarkdown(requireValue(row[4], "source row field")),
       codes,
       pnachFile: null,
       pnachText: null,
-      unlock: { kind: "xplus", md: xPlusSec, dirTable, levelNote, faqLink },
+      unlock: { kind: "xplus", markdown: xPlusSection, directionTable, levelNote, faqLink },
     });
   }
 
   // ----- Isuka (US) and Taikenban: pinned only -----
   {
-    const row: readonly string[] = ident(othIdent, /^Guilty Gear Isuka/, "SLUS-20908", "054DED36");
+    const row: readonly string[] = identityRow(otherIdentity, /^Guilty Gear Isuka/, "SLUS-20908", "054DED36");
     addRelease({
       gameId: "isuka",
       slug: "us-slus-20908",
@@ -696,15 +714,15 @@ export function loadSite(): Site {
       serial: "SLUS-20908",
       version: "1.00",
       crc: "054DED36",
-      elf: { name: "SLUS_209.08", sha256: stripMd(requireValue(row[3], "source row field")) },
-      imageInfo: stripMd(requireValue(row[4], "source row field")),
+      elf: { name: "SLUS_209.08", sha256: stripMarkdown(requireValue(row[3], "source row field")) },
+      imageInfo: stripMarkdown(requireValue(row[4], "source row field")),
       codes: [],
       pnachFile: null,
       pnachText: null,
-      unlock: { kind: "isuka", md: isukaSec },
+      unlock: { kind: "isuka", markdown: isukaSection },
     });
-    const t: readonly string[] = requireValue(
-      famIdent.rows.find((r: readonly string[]): boolean => /Taikenban/.test(requireValue(r[0], "trial release"))),
+    const trialRow: readonly string[] = requireValue(
+      familyIdentity.rows.find((candidate: readonly string[]): boolean => /Taikenban/.test(requireValue(candidate[0], "trial release"))),
       "trial identity",
     );
     addRelease({
@@ -714,17 +732,17 @@ export function loadSite(): Site {
       serial: "SLPM-60193",
       version: "1.00",
       crc: "7CF7B5DA",
-      elf: { name: "SLPM_601.93", sha256: stripMd(requireValue(t[2], "source row field")) },
-      imageInfo: stripMd(requireValue(t[3], "source row field")),
+      elf: { name: "SLPM_601.93", sha256: stripMarkdown(requireValue(trialRow[2], "source row field")) },
+      imageInfo: stripMarkdown(requireValue(trialRow[3], "source row field")),
       codes: [],
       pnachFile: null,
       pnachText: null,
-      unlock: { kind: "taikenban", md: requireValue(famMaps["Taikenban (trial)"], "trial description") },
+      unlock: { kind: "taikenban", markdown: requireValue(familyMaps["Taikenban (trial)"], "trial description") },
     });
   }
 
   // Catalog drafts never enter the public model or the downloads list.
-  let features: CatalogFeature[] = loadCatalog(REPO, releases);
+  let features: CatalogFeature[] = loadCatalog(repo, releases);
   for (let feature of features) feature.release.codes.push(feature);
   for (let release of releases) {
     release.counts = countCodes(release.codes);
@@ -732,24 +750,24 @@ export function loadSite(): Site {
       (release.pnachText ? parsePnach(release.pnachText).sections.length : 0) +
       features
         .filter((feature: CatalogFeature): boolean => feature.release === release)
-        .reduce((n: number, feature: CatalogFeature): number => n + (feature.artifact?.sectionCount ?? 0), 0);
+        .reduce((count: number, feature: CatalogFeature): number => count + (feature.artifact?.sectionCount ?? 0), 0);
   }
 
   // ----- Games -----
-  let games: readonly Game[] = GAME_DEFS.map(
-    (g: GameDefinition): Game => ({ ...g, releases: releases.filter((r: Release): boolean => r.gameId === g.id) }),
+  let games: readonly Game[] = GAME_DEFINITIONS.map(
+    (game: GameDefinition): Game => ({ ...game, releases: releases.filter((release: Release): boolean => release.gameId === game.id) }),
   );
 
   const shared: Shared = {
     priorWork,
     sourcesTable,
-    lee4Where,
+    lee4Writes,
     lee4Tests,
     masterCode,
     sideEffect,
     verdict,
     playTime,
-    timeSep,
+    stageSelectPlayTime,
     stageTable,
     stageFlags,
     stageStates,
@@ -758,24 +776,24 @@ export function loadSite(): Site {
     charactersMd,
     caveatsMd,
     howTo,
-    accept,
+    forcedEntries,
     jpDoc,
     jpRuntime,
-    jpSingle,
-    jpAppend,
+    jpSingleCharacter,
+    jpAppendEdition,
     guideClaims,
     verification,
     testSetup,
-    famMaps,
-    famRows,
+    familyMaps,
+    familyRows,
     x2Doc,
-    famDoc,
-    othDoc,
+    familyDoc,
+    otherDiscsDoc,
     acDoc,
-    evidenceLevels: R.reg.evidence_levels,
-    claims: R.claims,
-    registryCount: R.count,
+    evidenceLevels: registry.metadata.evidence_levels,
+    claims: registry.claims,
+    registryCount: registry.count,
     commit,
   };
-  return { games, releases, shared, GROUPS, features, built: "", priorMap: new Map() };
+  return { games, releases, shared, features, built: "", priorMap: new Map() };
 }

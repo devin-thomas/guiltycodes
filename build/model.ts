@@ -1,4 +1,5 @@
 export type Status = "VERIFIED" | "INFERRED" | "NOT TESTED" | "SUPERSEDED";
+export const STATUS_ORDER: readonly Status[] = ["VERIFIED", "INFERRED", "NOT TESTED", "SUPERSEDED"];
 export type EvidenceLevel = "S0" | "S1" | "S2" | "S3" | "S4" | "S5" | "S6";
 export type FeatureKind = "native-tip" | "simple-code" | "compiled-module";
 export type FeatureCategory =
@@ -67,9 +68,9 @@ export type CodeFields = {
   readonly level: EvidenceLevel | null;
   readonly checked: string;
   readonly hardware: Status;
-  readonly regId?: string;
+  readonly registryId?: string;
   readonly published?: Published;
-  readonly mateId?: string | null;
+  readonly counterpartId?: string | null;
   readonly inputNote?: string;
   readonly credit?: string | null;
 };
@@ -89,19 +90,19 @@ export type CompiledModule = CatalogFields & { readonly kind: "compiled-module";
 export type CodeDraft = LegacyCode | NativeTip | SimpleCode | CompiledModule;
 export type Code = CodeDraft & { readonly release: Release; readonly url: string };
 export type CatalogFeature = (NativeTip | SimpleCode | CompiledModule) & { readonly release: Release; readonly url: string };
-export type AcplusUnlock = { readonly kind: "acplus"; readonly jp?: boolean; readonly append?: boolean };
+export type AcplusUnlock = { readonly kind: "acplus"; readonly isJapanese?: boolean; readonly isAppendEdition?: boolean };
 export type X2Unlock = { readonly kind: "x2" };
-export type FamilyUnlock = { readonly kind: "family"; readonly mapKey: string; readonly rowRe: RegExp };
-export type XUnlock = { readonly kind: "x"; readonly md: string };
+export type FamilyUnlock = { readonly kind: "family"; readonly mapKey: string; readonly rowPattern: RegExp };
+export type XUnlock = { readonly kind: "x"; readonly markdown: string };
 export type XplusUnlock = {
   readonly kind: "xplus";
-  readonly md: string;
-  readonly dirTable: Table;
+  readonly markdown: string;
+  readonly directionTable: Table;
   readonly levelNote: string;
   readonly faqLink: string;
 };
-export type IsukaUnlock = { readonly kind: "isuka"; readonly md: string };
-export type TaikenbanUnlock = { readonly kind: "taikenban"; readonly md: string };
+export type IsukaUnlock = { readonly kind: "isuka"; readonly markdown: string };
+export type TaikenbanUnlock = { readonly kind: "taikenban"; readonly markdown: string };
 export type Unlock = AcplusUnlock | X2Unlock | FamilyUnlock | XUnlock | XplusUnlock | IsukaUnlock | TaikenbanUnlock;
 export type ReleaseInput = {
   readonly gameId: GameId;
@@ -125,14 +126,14 @@ export type ReleaseInput = {
   readonly hasLee4?: boolean;
   readonly unlock: Unlock;
   readonly note?: string | null;
-  readonly famName?: string;
+  readonly familyName?: string;
 };
 export type GameDefinition = { readonly id: GameId; readonly title: string; readonly short: string; readonly slug: string };
 export type Game = GameDefinition & { readonly releases: readonly Release[] };
 export type Release = Omit<ReleaseInput, "slug" | "codes"> & {
   readonly slug: string;
   readonly region: string;
-  readonly regionShort: string;
+  readonly regionCode: string;
   codes: Code[];
   counts: Counts;
   patchSections: number;
@@ -142,13 +143,13 @@ export type Release = Omit<ReleaseInput, "slug" | "codes"> & {
 export type Shared = {
   readonly priorWork: string;
   readonly sourcesTable: Table;
-  readonly lee4Where: Table;
+  readonly lee4Writes: Table;
   readonly lee4Tests: Table;
   readonly masterCode: string;
   readonly sideEffect: string;
   readonly verdict: string;
   readonly playTime: Table;
-  readonly timeSep: string;
+  readonly stageSelectPlayTime: string;
   readonly stageTable: Table;
   readonly stageFlags: Table;
   readonly stageStates: Table;
@@ -157,19 +158,19 @@ export type Shared = {
   readonly charactersMd: string;
   readonly caveatsMd: string;
   readonly howTo: string;
-  readonly accept: string;
+  readonly forcedEntries: string;
   readonly jpDoc: string;
   readonly jpRuntime: Table;
-  readonly jpSingle: string;
-  readonly jpAppend: string;
+  readonly jpSingleCharacter: string;
+  readonly jpAppendEdition: string;
   readonly guideClaims: string;
   readonly verification: Table;
   readonly testSetup: ReadonlyArray<readonly [string, string]>;
-  readonly famMaps: Readonly<Record<string, string>>;
-  readonly famRows: ReadonlyArray<readonly string[]>;
+  readonly familyMaps: Readonly<Record<string, string>>;
+  readonly familyRows: ReadonlyArray<readonly string[]>;
   readonly x2Doc: string;
-  readonly famDoc: string;
-  readonly othDoc: string;
+  readonly familyDoc: string;
+  readonly otherDiscsDoc: string;
   readonly acDoc: string;
   readonly evidenceLevels: Readonly<Record<string, string>>;
   readonly claims: readonly unknown[];
@@ -180,7 +181,6 @@ export type Site = {
   readonly games: readonly Game[];
   readonly releases: readonly Release[];
   readonly shared: Shared;
-  readonly GROUPS: readonly CodeGroup[];
   readonly features: readonly CatalogFeature[];
   built: string;
   priorMap: Map<string, string>;

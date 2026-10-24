@@ -1,15 +1,15 @@
 // Small helpers: markdown slicing, table parsing, pnach parsing, escaping.
 import fs from "node:fs";
 import { marked } from "marked";
+import type { Tokens, RendererThis, Renderer } from "marked";
+import type { Table, ParsedPnach, PnachSection } from "./model.ts";
+import { requireValue } from "./model.ts";
+import { parseRecord, parseTextList, parseArray } from "./validate.ts";
 
 // Extra sanitiser rules for one machine live in docs/sanitize.local.json (ignored by git):
 // { "private": ["regex", ...], "replace": [["regex", "replacement"], ...] }
-import type { Table, ParsedPnach, PnachSection } from "./model.ts";
-import type { Tokens, RendererThis, Renderer } from "marked";
-import { requireValue } from "./model.ts";
-import { record, list, array } from "./validate.ts";
+export type LocalRules = { readonly private: readonly string[]; readonly replace: ReadonlyArray<readonly [RegExp, string]> };
 
-type LocalRules = { readonly private: readonly string[]; readonly replace: ReadonlyArray<readonly [RegExp, string]> };
 function loadLocalRules(): LocalRules {
   let file: URL = new URL("../docs/sanitize.local.json", import.meta.url);
   if (!fs.existsSync(file)) return { private: [], replace: [] };
@@ -18,11 +18,11 @@ function loadLocalRules(): LocalRules {
 }
 
 export function parseLocalRules(raw: unknown): LocalRules {
-  let value: Record<string, unknown> = record(raw, "sanitize.local.json");
+  let rules: Record<string, unknown> = parseRecord(raw, "sanitize.local.json");
   return {
-    private: list(value["private"] ?? [], "private", { unique: false }),
-    replace: array(value["replace"] ?? [], "replace").map((item: unknown): readonly [RegExp, string] => {
-      const pair: readonly unknown[] = array(item, "replacement");
+    private: parseTextList(rules["private"] ?? [], "private", { unique: false }),
+    replace: parseArray(rules["replace"] ?? [], "replace").map((item: unknown): readonly [RegExp, string] => {
+      const pair: readonly unknown[] = parseArray(item, "replacement");
       if (pair.length !== 2 || typeof pair[0] !== "string" || typeof pair[1] !== "string") {
         throw new Error("Replacement must contain a pattern and replacement string");
       }
@@ -30,11 +30,11 @@ export function parseLocalRules(raw: unknown): LocalRules {
     }),
   };
 }
-let LOCAL: LocalRules = loadLocalRules();
+let localRules: LocalRules = loadLocalRules();
 
-export function esc(s: string | number | null | undefined): string {
-  return String(s ?? "").replace(/[&<>"']/g, (c: string): string => {
-    switch (c) {
+export function escapeHtml(value: string | number | null | undefined): string {
+  return String(value ?? "").replace(/[&<>"']/g, (character: string): string => {
+    switch (character) {
       case "&":
         return "&amp;";
       case "<":
@@ -46,39 +46,41 @@ export function esc(s: string | number | null | undefined): string {
       case "'":
         return "&#39;";
       default:
-        return c;
+        return character;
     }
   });
 }
 
-export function slugify(s: string): string {
-  return String(s)
+export function slugify(text: string): string {
+  return String(text)
     .toLowerCase()
     .replace(/&/g, " and ")
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
 }
 
-export function stripMd(s: string | undefined): string {
-  return String(s ?? "")
+export function stripMarkdown(markdown: string | undefined): string {
+  return String(markdown ?? "")
     .replace(/\*\*/g, "")
     .replace(/`/g, "")
     .trim();
 }
 
+type RequiredOption = { readonly required?: boolean };
+
 /** Text under a heading line (e.g. "## Quick start") up to the next heading of the same or higher level. */
-export function section(md: string, heading: string, { required = true }: { readonly required?: boolean } = {}): string {
-  let lines: string[] = md.split(/\r?\n/);
-  const level: number = requireValue(heading.match(/^#+/), "heading level")[0].length;
-  const start: number = lines.findIndex((l: string): boolean => l.trim() === heading.trim());
+export function sectionBody(markdown: string, heading: string, { required = true }: RequiredOption = {}): string {
+  let lines: string[] = markdown.split(/\r?\n/);
+  const headingLevel: number = requireValue(heading.match(/^#+/), "heading level")[0].length;
+  const start: number = lines.findIndex((line: string): boolean => line.trim() === heading.trim());
   if (start < 0) {
     if (required) throw new Error(`section not found: ${heading}`);
     return "";
   }
   let end: number = lines.length;
   for (let i: number = start + 1; i < lines.length; i++) {
-    let m: RegExpMatchArray | null = requireValue(lines[i], "heading line").match(/^(#+)\s/);
-    if (m && requireValue(m[1], "heading prefix").length <= level) {
+    let headingMatch: RegExpMatchArray | null = requireValue(lines[i], "heading line").match(/^(#+)\s/);
+    if (headingMatch && requireValue(headingMatch[1], "heading prefix").length <= headingLevel) {
       end = i;
       break;
     }
@@ -90,20 +92,20 @@ export function section(md: string, heading: string, { required = true }: { read
 }
 
 /** Text between two regexes (start inclusive, end exclusive). */
-export function between(
-  md: string,
-  startRe: RegExp,
-  endRe: RegExp | null,
-  { required = true }: { readonly required?: boolean } = {},
+export function textBetween(
+  markdown: string,
+  startPattern: RegExp,
+  endPattern: RegExp | null,
+  { required = true }: RequiredOption = {},
 ): string {
-  const s: number = md.search(startRe);
-  if (s < 0) {
-    if (required) throw new Error(`start not found: ${startRe}`);
+  const start: number = markdown.search(startPattern);
+  if (start < 0) {
+    if (required) throw new Error(`start not found: ${startPattern}`);
     return "";
   }
-  const rest: string = md.slice(s);
-  const e: number = endRe ? rest.slice(1).search(endRe) : -1;
-  return (e < 0 ? rest : rest.slice(0, e + 1)).trim();
+  const rest: string = markdown.slice(start);
+  const end: number = endPattern ? rest.slice(1).search(endPattern) : -1;
+  return (end < 0 ? rest : rest.slice(0, end + 1)).trim();
 }
 
 function splitRow(line: string): readonly string[] {
@@ -112,18 +114,18 @@ function splitRow(line: string): readonly string[] {
     .replace(/^\|/, "")
     .replace(/\|$/, "")
     .split(/(?<!\\)\|/)
-    .map((c: string): string => c.trim().replace(/\\\|/g, "|"));
+    .map((cell: string): string => cell.trim().replace(/\\\|/g, "|"));
 }
 
-/** All GFM tables in md: { header, rows, text }. */
-export function parseTables(md: string): readonly Table[] {
-  let lines: string[] = md.split(/\r?\n/);
-  let out: Table[] = [];
+/** All GFM tables in the markdown: { header, rows, text }. */
+export function parseTables(markdown: string): readonly Table[] {
+  let lines: string[] = markdown.split(/\r?\n/);
+  let tables: Table[] = [];
   for (let i: number = 0; i < lines.length - 1; i++) {
     if (/^\s*\|/.test(requireValue(lines[i], "table line")) && /^\s*\|[\s:|-]+\|\s*$/.test(requireValue(lines[i + 1], "table divider"))) {
       let j: number = i + 2;
       while (j < lines.length && /^\s*\|/.test(requireValue(lines[j], "table row"))) j++;
-      out.push({
+      tables.push({
         header: splitRow(requireValue(lines[i], "table header")),
         rows: lines.slice(i + 2, j).map(splitRow),
         text: lines.slice(i, j).join("\n"),
@@ -131,42 +133,46 @@ export function parseTables(md: string): readonly Table[] {
       i = j;
     }
   }
-  return out;
+  return tables;
 }
 
 /** First table whose header row matches the regex. */
-export function tableWith(md: string, headerRe: RegExp): Table {
-  const t: Table | undefined = parseTables(md).find((t: Table): boolean => headerRe.test(t.header.join("|")));
-  if (!t) throw new Error(`table not found: ${headerRe}`);
-  return t;
+export function tableWith(markdown: string, headerPattern: RegExp): Table {
+  const table: Table | undefined = parseTables(markdown).find((candidate: Table): boolean =>
+    headerPattern.test(candidate.header.join("|")),
+  );
+  if (!table) throw new Error(`table not found: ${headerPattern}`);
+  return table;
 }
 
-export function tableToMd(header: readonly string[], rows: ReadonlyArray<readonly string[]>): string {
-  function row(r: readonly string[]): string {
-    return "| " + r.map((c: string): string => String(c).replace(/\|/g, "\\|")).join(" | ") + " |";
+export function tableMarkdown(header: readonly string[], rows: ReadonlyArray<readonly string[]>): string {
+  function rowMarkdown(cells: readonly string[]): string {
+    return "| " + cells.map((cell: string): string => String(cell).replace(/\|/g, "\\|")).join(" | ") + " |";
   }
-  return [row(header), row(header.map((): string => "---")), ...rows.map(row)].join("\n");
+  return [rowMarkdown(header), rowMarkdown(header.map((): string => "---")), ...rows.map(rowMarkdown)].join("\n");
 }
 
-/** Remove table columns by header name from every table in md. */
-export function dropColumns(md: string, names: readonly string[]): string {
-  let out: string = md;
-  for (const t of parseTables(md)) {
-    let idx: number[] = t.header
-      .map((h: string, i: number): number => (names.some((n: string): boolean => h.toLowerCase() === n.toLowerCase()) ? i : -1))
+/** Remove table columns by header name from every table in the markdown. */
+function dropColumns(markdown: string, names: readonly string[]): string {
+  let result: string = markdown;
+  for (const table of parseTables(markdown)) {
+    let dropped: number[] = table.header
+      .map((heading: string, i: number): number =>
+        names.some((name: string): boolean => heading.toLowerCase() === name.toLowerCase()) ? i : -1,
+      )
       .filter((i: number): boolean => i >= 0);
-    if (!idx.length) continue;
-    function keep(r: readonly string[]): readonly string[] {
-      return r.filter((_: string, i: number): boolean => !idx.includes(i));
+    if (!dropped.length) continue;
+    function keptCells(cells: readonly string[]): readonly string[] {
+      return cells.filter((_: string, i: number): boolean => !dropped.includes(i));
     }
-    out = out.replace(t.text, tableToMd(keep(t.header), t.rows.map(keep)));
+    result = result.replace(table.text, tableMarkdown(keptCells(table.header), table.rows.map(keptCells)));
   }
-  return out;
+  return result;
 }
 
 /** Drop code addresses of routines and jump tables, internal function names and local file mentions. */
-export function scrub(s: string | null | undefined): string {
-  let out: string = String(s ?? "")
+export function scrub(text: string | null | undefined): string {
+  let result: string = String(text ?? "")
     .replace(/,\s*(?:the game's own debug "all open" routine )?\(0x[0-9A-F]{6}, reachable/g, " (reachable")
     .replace(/\(0x[0-9A-F]{6}, reachable/g, "(reachable")
     .replace(/\s*\((?:the )?(?:jump tables? )?0x[0-9A-F]{6}[^()]*\)/g, "")
@@ -177,11 +183,11 @@ export function scrub(s: string | null | undefined): string {
     .replace(/\s*\(games\/[^()]*\)/g, "")
     .replace(/ from games\/[a-z0-9-]+/g, "")
     .replace(/(\S)\s+\.(?=\s|$)/g, "$1.");
-  for (let [re, to] of LOCAL.replace) out = out.replace(re, to);
-  return out;
+  for (let [pattern, replacement] of localRules.replace) result = result.replace(pattern, replacement);
+  return result;
 }
 
-let PRIVATE: RegExp = new RegExp(
+let privatePattern: RegExp = new RegExp(
   [
     String.raw`\.py\b`,
     String.raw`[A-Z]:\\`,
@@ -189,7 +195,7 @@ let PRIVATE: RegExp = new RegExp(
     String.raw`\.p2s\b`,
     String.raw`sha256 [0-9a-f]{8}`,
     String.raw`\bevidence\s+\d`,
-    ...LOCAL.private,
+    ...localRules.private,
   ].join("|"),
   "i",
 );
@@ -198,30 +204,30 @@ let PRIVATE: RegExp = new RegExp(
  * Make repo-doc markdown fit for a public page: no private paths, scripts, local links or
  * evidence-capture references. Blocks that are about our tooling rather than the codes are dropped.
  */
-export function cleanMd(md: string): string {
-  let s: string = scrub(dropColumns(md, ["Evidence", "Found from", "Evidence level", "Where it is in SLPS_201.37"]));
-  s = s.replace(/<!--[\s\S]*?-->/g, "");
-  s = s.replace(/\s*\((?:[^()]*\.py[^()]*|evidence[^()]*|S\d[^()]*evidence[^()]*)\)/gi, "");
-  s = s.replace(/\[([^\]]+)\]\((?!https?:|#)[^)]*\)/g, "$1");
-  let blocks: string[] = s.split(/\n{2,}/);
+function publicMarkdown(markdown: string): string {
+  let cleaned: string = scrub(dropColumns(markdown, ["Evidence", "Found from", "Evidence level", "Where it is in SLPS_201.37"]));
+  cleaned = cleaned.replace(/<!--[\s\S]*?-->/g, "");
+  cleaned = cleaned.replace(/\s*\((?:[^()]*\.py[^()]*|evidence[^()]*|S\d[^()]*evidence[^()]*)\)/gi, "");
+  cleaned = cleaned.replace(/\[([^\]]+)\]\((?!https?:|#)[^)]*\)/g, "$1");
+  let blocks: string[] = cleaned.split(/\n{2,}/);
   let kept: string[] = [];
-  for (const b of blocks) {
-    if (/^\s*\|/.test(b)) {
-      let rows: string[] = b.split("\n").filter((l: string, i: number): boolean => i < 2 || !PRIVATE.test(l));
+  for (const block of blocks) {
+    if (/^\s*\|/.test(block)) {
+      let rows: string[] = block.split("\n").filter((line: string, i: number): boolean => i < 2 || !privatePattern.test(line));
       kept.push(rows.join("\n"));
-    } else if (b.split("\n").some((l: string): boolean => PRIVATE.test(l)) && !/^\s*[-*]\s/m.test(b)) {
+    } else if (block.split("\n").some((line: string): boolean => privatePattern.test(line)) && !/^\s*[-*]\s/m.test(block)) {
       continue;
-    } else if (/^\s*[-*]\s/m.test(b)) {
-      let lines: string[] = b.split("\n");
-      let out: string[] = [];
-      let skip: boolean = false;
-      for (const l of lines) {
-        if (/^\s*[-*]\s/.test(l)) skip = PRIVATE.test(l);
-        else if (PRIVATE.test(l)) skip = true;
-        if (!skip) out.push(l);
+    } else if (/^\s*[-*]\s/m.test(block)) {
+      let lines: string[] = block.split("\n");
+      let keptLines: string[] = [];
+      let isSkipping: boolean = false;
+      for (const line of lines) {
+        if (/^\s*[-*]\s/.test(line)) isSkipping = privatePattern.test(line);
+        else if (privatePattern.test(line)) isSkipping = true;
+        if (!isSkipping) keptLines.push(line);
       }
-      if (out.length) kept.push(out.join("\n"));
-    } else kept.push(b);
+      if (keptLines.length) kept.push(keptLines.join("\n"));
+    } else kept.push(block);
   }
   return kept.join("\n\n").trim();
 }
@@ -229,85 +235,95 @@ export function cleanMd(md: string): string {
 let renderer: Renderer<string, string> = new marked.Renderer();
 renderer.link = function (this: RendererThis, { href, title, tokens }: Tokens.Link): string {
   const text: string = this.parser.parseInline(tokens);
-  const ext: boolean = /^https?:/.test(href);
-  return `<a href="${esc(href)}"${title ? ` title="${esc(title)}"` : ""}${ext ? ' rel="noopener noreferrer" class="ext"' : ""}>${text}</a>`;
+  const isExternal: boolean = /^https?:/.test(href);
+  return `<a href="${escapeHtml(href)}"${title ? ` title="${escapeHtml(title)}"` : ""}${isExternal ? ' rel="noopener noreferrer" class="ext"' : ""}>${text}</a>`;
 };
 renderer.table = function (this: RendererThis, token: Tokens.Table): string {
-  const head: string = token.header.map((c: Tokens.TableCell): string => `<th>${this.parser.parseInline(c.tokens)}</th>`).join("");
+  const head: string = token.header.map((cell: Tokens.TableCell): string => `<th>${this.parser.parseInline(cell.tokens)}</th>`).join("");
   const body: string = token.rows
     .map(
-      (r: Tokens.TableCell[]): string =>
-        `<tr>${r.map((c: Tokens.TableCell): string => `<td>${this.parser.parseInline(c.tokens)}</td>`).join("")}</tr>`,
+      (row: Tokens.TableCell[]): string =>
+        `<tr>${row.map((cell: Tokens.TableCell): string => `<td>${this.parser.parseInline(cell.tokens)}</td>`).join("")}</tr>`,
     )
     .join("");
   return `<div class="tablewrap"><table class="grid"><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table></div>`;
 };
 marked.use({ renderer, gfm: true, breaks: false });
 
+type MarkdownOptions = { readonly clean?: boolean; readonly shift?: number };
+
 /** Render repo markdown; headings are shifted so the fragment fits under an h2. */
-export function md(src: string, { clean = true, shift = 1 }: { readonly clean?: boolean; readonly shift?: number } = {}): string {
-  let s: string = clean ? cleanMd(src) : src;
-  if (shift) s = s.replace(/^(#{1,5})\s/gm, (_: string, h: string): string => "#".repeat(Math.min(6, h.length + shift)) + " ");
-  return marked.parse(s, { async: false });
+export function markdownHtml(source: string, { clean = true, shift = 1 }: MarkdownOptions = {}): string {
+  let markdown: string = clean ? publicMarkdown(source) : source;
+  if (shift)
+    markdown = markdown.replace(
+      /^(#{1,5})\s/gm,
+      (_: string, hashes: string): string => "#".repeat(Math.min(6, hashes.length + shift)) + " ",
+    );
+  return marked.parse(markdown, { async: false });
 }
-export function mdInline(src: string): string {
-  return marked.parseInline(src, { async: false });
+
+export function inlineMarkdownHtml(source: string): string {
+  return marked.parseInline(source, { async: false });
 }
+
+type SectionBuilder = { name: string; author: string; description: string; patches: string[]; lines: string[] };
 
 /** Parse a PCSX2 .pnach: header comments + sections with raw code lines. */
 export function parsePnach(text: string): ParsedPnach {
-  type SectionBuilder = { name: string; author: string; description: string; patches: string[]; lines: string[] };
   let sections: SectionBuilder[] = [];
-  let cur: SectionBuilder | null = null;
+  let current: SectionBuilder | null = null;
   let header: { gametitle: string; comments: string[] } = { gametitle: "", comments: [] };
   for (const line of text.split(/\r?\n/)) {
-    let m: RegExpMatchArray | null = line.match(/^\[(.+)\]\s*$/);
-    if (m) {
-      cur = { name: requireValue(m[1], "pnach section name"), author: "", description: "", patches: [], lines: [line] };
-      sections.push(cur);
+    let sectionMatch: RegExpMatchArray | null = line.match(/^\[(.+)\]\s*$/);
+    if (sectionMatch) {
+      current = { name: requireValue(sectionMatch[1], "pnach section name"), author: "", description: "", patches: [], lines: [line] };
+      sections.push(current);
       continue;
     }
-    if (!cur) {
+    if (!current) {
       if (line.startsWith("gametitle=")) header.gametitle = line.slice(10);
       else if (line.startsWith("comment=")) header.comments.push(line.slice(8));
       continue;
     }
     if (!line.trim()) continue;
-    cur.lines.push(line);
-    if (line.startsWith("author=")) cur.author = line.slice(7);
-    else if (line.startsWith("description=")) cur.description = line.slice(12);
-    else if (line.startsWith("patch=")) cur.patches.push(line);
+    current.lines.push(line);
+    if (line.startsWith("author=")) current.author = line.slice(7);
+    else if (line.startsWith("description=")) current.description = line.slice(12);
+    else if (line.startsWith("patch=")) current.patches.push(line);
   }
   return {
     header,
     sections: sections.map(
-      (s: SectionBuilder): PnachSection => ({
-        name: s.name,
-        author: s.author,
-        description: s.description,
-        patches: s.patches,
-        text: s.lines.join("\n"),
-        raw: s.patches.map((p: string): string => {
-          const f: readonly string[] = p.split(",");
-          if (f.length !== 5 || f[1] !== "EE" || f[3] !== "extended") throw new Error(`unexpected patch line: ${p}`);
-          return `${f[2]} ${f[4]}`;
+      (section: SectionBuilder): PnachSection => ({
+        name: section.name,
+        author: section.author,
+        description: section.description,
+        patches: section.patches,
+        text: section.lines.join("\n"),
+        raw: section.patches.map((patch: string): string => {
+          const fields: readonly string[] = patch.split(",");
+          if (fields.length !== 5 || fields[1] !== "EE" || fields[3] !== "extended") throw new Error(`unexpected patch line: ${patch}`);
+          return `${fields[2]} ${fields[4]}`;
         }),
       }),
     ),
   };
 }
 
-const REGION_LABELS: Readonly<Record<string, string>> = {
+const REGION_NAMES: Readonly<Record<string, string>> = {
   SLUS: "North America (NTSC-U)",
   SLES: "Europe (PAL)",
   SLPS: "Japan (NTSC-J)",
   SLPM: "Japan (NTSC-J)",
   SLKA: "Korea (NTSC-K)",
 };
-const REGION_SHORT: Readonly<Record<string, string>> = { SLUS: "US", SLES: "EU", SLPS: "JP", SLPM: "JP", SLKA: "KR" };
-export function regionOf(serial: string): string {
-  return REGION_LABELS[serial.slice(0, 4)] ?? "Unknown";
+const REGION_CODES: Readonly<Record<string, string>> = { SLUS: "US", SLES: "EU", SLPS: "JP", SLPM: "JP", SLKA: "KR" };
+
+export function regionName(serial: string): string {
+  return REGION_NAMES[serial.slice(0, 4)] ?? "Unknown";
 }
-export function regionShort(serial: string): string {
-  return REGION_SHORT[serial.slice(0, 4)] ?? "?";
+
+export function regionCode(serial: string): string {
+  return REGION_CODES[serial.slice(0, 4)] ?? "?";
 }

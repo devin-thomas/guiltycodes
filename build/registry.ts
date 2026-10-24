@@ -1,5 +1,5 @@
 import YAML from "yaml";
-import { array, list, number, record, text } from "./validate.ts";
+import { parseArray, parseNumber, parseRecord, parseText, parseTextList } from "./validate.ts";
 import type { EvidenceLevel } from "./model.ts";
 
 export type DerivedFinding = {
@@ -28,7 +28,7 @@ export type ReleasePin = {
   readonly disc_sha1: string;
 };
 export type Registry = {
-  readonly reg: {
+  readonly metadata: {
     readonly release: {
       readonly elf: { readonly pcsx2_crc: string; readonly name: string; readonly size: number; readonly sha256: string };
       readonly disc: {
@@ -55,79 +55,82 @@ export function parseEvidenceLevel(value: unknown): EvidenceLevel {
 }
 export function parseRegistry(source: string): Registry {
   const raw: unknown = YAML.parse(source);
-  let reg: Record<string, unknown> = record(raw, "registry");
-  let release: Record<string, unknown> = record(reg["release"], "registry release");
-  let elf: Record<string, unknown> = record(release["elf"], "registry ELF");
-  let disc: Record<string, unknown> = record(release["disc"], "registry disc");
-  let env: Record<string, unknown> = record(reg["test_environment"], "registry environment");
-  let levels: Record<string, unknown> = record(reg["evidence_levels"], "evidence levels");
+  let registry: Record<string, unknown> = parseRecord(raw, "registry");
+  let release: Record<string, unknown> = parseRecord(registry["release"], "registry release");
+  let elf: Record<string, unknown> = parseRecord(release["elf"], "registry ELF");
+  let disc: Record<string, unknown> = parseRecord(release["disc"], "registry disc");
+  let environment: Record<string, unknown> = parseRecord(registry["test_environment"], "registry environment");
+  let levels: Record<string, unknown> = parseRecord(registry["evidence_levels"], "evidence levels");
   const evidenceLevels: Readonly<Record<string, string>> = Object.fromEntries(
-    Object.entries(levels).map(([key, value]: [string, unknown]): [string, string] => [key, text(value, key)]),
+    Object.entries(levels).map(([key, value]: [string, unknown]): [string, string] => [key, parseText(value, key)]),
   );
-  const findings: readonly unknown[] = array(reg["findings"], "registry findings");
+  const findings: readonly unknown[] = parseArray(registry["findings"], "registry findings");
   let published: PublishedFinding[] = [];
   let derived: Map<string, DerivedFinding> = new Map();
   let releasePins: ReleasePin[] = [];
   let claims: unknown[] = [];
   for (const rawFinding of findings) {
-    let f: Record<string, unknown> = record(rawFinding, "finding");
-    const kind: string = text(f["claim_kind"], "claim_kind");
-    if (kind === "derived-code" && f["title"] === undefined) {
-      text(f["cheat_file"], "ported-code cheat file");
+    let entry: Record<string, unknown> = parseRecord(rawFinding, "finding");
+    const claimKind: string = parseText(entry["claim_kind"], "claim_kind");
+    if (claimKind === "derived-code" && entry["title"] === undefined) {
+      parseText(entry["cheat_file"], "ported-code cheat file");
       continue;
     }
-    if (kind === "published-code" || kind === "derived-code") {
+    if (claimKind === "published-code" || claimKind === "derived-code") {
       const finding: DerivedFinding = {
-        finding_id: text(f["finding_id"], "finding_id"),
-        title: text(f["title"], "title"),
-        raw_code: list(f["raw_code"], "raw_code", { unique: false }),
-        evidence_level: parseEvidenceLevel(f["evidence_level"]),
+        finding_id: parseText(entry["finding_id"], "finding_id"),
+        title: parseText(entry["title"], "title"),
+        raw_code: parseTextList(entry["raw_code"], "raw_code", { unique: false }),
+        evidence_level: parseEvidenceLevel(entry["evidence_level"]),
       };
-      if (kind === "derived-code") derived.set(finding.title, finding);
+      if (claimKind === "derived-code") derived.set(finding.title, finding);
       else
         published.push({
           ...finding,
-          source_date: text(f["source_date"], "source_date"),
-          conflicts_with: list(f["conflicts_with"] ?? [], "conflicts_with"),
-          generated_pnach: list(f["generated_pnach"], "generated_pnach", { unique: false }),
-          provenance_note: typeof f["provenance_note"] === "string" ? f["provenance_note"] : text(f["provenance_note"], "provenance_note"),
-          source_author: text(f["source_author"], "source_author"),
-          source_url: text(f["source_url"], "source_url"),
-          ...(f["source_archive"] === undefined ? {} : { source_archive: text(f["source_archive"], "source_archive") }),
-          ...(f["source_mirror"] === undefined ? {} : { source_mirror: text(f["source_mirror"], "source_mirror") }),
+          source_date: parseText(entry["source_date"], "source_date"),
+          conflicts_with: parseTextList(entry["conflicts_with"] ?? [], "conflicts_with"),
+          generated_pnach: parseTextList(entry["generated_pnach"], "generated_pnach", { unique: false }),
+          provenance_note:
+            typeof entry["provenance_note"] === "string"
+              ? entry["provenance_note"]
+              : parseText(entry["provenance_note"], "provenance_note"),
+          source_author: parseText(entry["source_author"], "source_author"),
+          source_url: parseText(entry["source_url"], "source_url"),
+          ...(entry["source_archive"] === undefined ? {} : { source_archive: parseText(entry["source_archive"], "source_archive") }),
+          ...(entry["source_mirror"] === undefined ? {} : { source_mirror: parseText(entry["source_mirror"], "source_mirror") }),
         });
-    } else if (kind === "release")
+    } else if (claimKind === "release")
       releasePins.push({
-        serial: text(f["serial"], "serial"),
-        elf_crc: text(f["elf_crc"], "elf_crc"),
-        game_version: text(f["game_version"], "game_version"),
-        elf_sha256: text(f["elf_sha256"], "elf_sha256"),
-        redump_id: number(f["redump_id"], "redump_id"),
-        disc_crc32: text(f["disc_crc32"], "disc_crc32"),
-        disc_sha1: text(f["disc_sha1"], "disc_sha1"),
+        serial: parseText(entry["serial"], "serial"),
+        elf_crc: parseText(entry["elf_crc"], "elf_crc"),
+        game_version: parseText(entry["game_version"], "game_version"),
+        elf_sha256: parseText(entry["elf_sha256"], "elf_sha256"),
+        redump_id: parseNumber(entry["redump_id"], "redump_id"),
+        disc_crc32: parseText(entry["disc_crc32"], "disc_crc32"),
+        disc_sha1: parseText(entry["disc_sha1"], "disc_sha1"),
       });
-    else if (kind === "published-claim") claims.push(rawFinding);
+    else if (claimKind === "published-claim") claims.push(rawFinding);
   }
   return {
-    reg: {
+    metadata: {
       release: {
         elf: {
-          pcsx2_crc: text(elf["pcsx2_crc"], "pcsx2_crc"),
-          name: text(elf["name"], "ELF name"),
-          size: number(elf["size"], "ELF size"),
-          sha256: text(elf["sha256"], "ELF sha256"),
+          pcsx2_crc: parseText(elf["pcsx2_crc"], "pcsx2_crc"),
+          name: parseText(elf["name"], "ELF name"),
+          size: parseNumber(elf["size"], "ELF size"),
+          sha256: parseText(elf["sha256"], "ELF sha256"),
         },
         disc: {
-          redump_url: text(disc["redump_url"], "redump_url"),
-          crc32: text(disc["crc32"], "disc crc32"),
-          sha1: text(disc["sha1"], "disc sha1"),
-          size: number(disc["size"], "disc size"),
-          exe_date: text(disc["exe_date"], "exe_date"),
+          redump_url: parseText(disc["redump_url"], "redump_url"),
+          crc32: parseText(disc["crc32"], "disc crc32"),
+          sha1: parseText(disc["sha1"], "disc sha1"),
+          size: parseNumber(disc["size"], "disc size"),
+          exe_date: parseText(disc["exe_date"], "exe_date"),
         },
       },
       test_environment: {
-        emulator: text(env["emulator"], "emulator"),
-        hardware_devices: text(env["hardware_devices"], "hardware_devices"),
+        emulator: parseText(environment["emulator"], "emulator"),
+        hardware_devices: parseText(environment["hardware_devices"], "hardware_devices"),
       },
       evidence_levels: evidenceLevels,
     },
