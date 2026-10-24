@@ -234,12 +234,22 @@
       `<p class="note"><small>${changedN(m) ? "Worked out from your values." : "The stock mission."} Wording follows the game's screen; the screenshot is always the stock disc.</small></p>`;
   }
 
+  const SHOTS = window.MISSION_SHOTS || { info: {}, fights: {} };
   function figure(m) {
-    if (root.dataset.noshots) return `<div class="shot none"><p>Screenshot not in this build.</p></div>`;
-    if (m > LAST)
-      return `<div class="shot none"><p><b>No capture for Mission ${m} yet.</b> The stock selector stops at No. 25 and wraps to No. 1. Missions 26 to 30 appear after you clear 1 to 25.</p></div>`;
-    const n = String(m).padStart(2, "0");
-    return `<figure class="shot"><a href="/assets/missions/info-${n}.webp" target="_blank" rel="noopener"><img src="/assets/missions/info-${n}.webp" width="640" height="448" alt="Accent Core Plus PS2 Mission ${m} info screen, stock"></a><figcaption>Mission ${m}, stock info screen (PS2 US). Select the image for full size.</figcaption></figure>`;
+    const info = SHOTS.info[m];
+    if (!info) {
+      if (!Object.keys(SHOTS.info).length) return `<div class="shot none"><p>Screenshot not in this build.</p></div>`;
+      return `<div class="shot none"><p><b>No capture for Mission ${m} in this build.</b></p></div>`;
+    }
+    const f = `/assets/missions/${info.file}`;
+    const note = m > LAST ? "Unlocked by clearing Missions 1 to 25 (Sol, via a code on a throwaway card); this mission itself is uncleared." : "";
+    let h = `<figure class="shot"><a href="${f}" target="_blank" rel="noopener"><img src="${f}" width="640" height="448" alt="Accent Core Plus PS2 Mission ${m} info screen, stock"></a><figcaption>Mission ${m}, stock info screen (PS2 US). ${note}</figcaption></figure>`;
+    const fight = SHOTS.fights[m];
+    if (fight) {
+      const g = `/assets/missions/${fight.file}`;
+      h += `<figure class="shot fightshot"><a href="${g}" target="_blank" rel="noopener"><img src="${g}" width="640" height="448" alt="Accent Core Plus PS2 Mission ${m} in play" loading="lazy"></a><figcaption>${esc(fight.caption)}</figcaption></figure>`;
+    }
+    return h;
   }
 
   // ---- refresh: push state into every control, flags and outputs ----

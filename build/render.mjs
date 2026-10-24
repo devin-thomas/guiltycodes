@@ -491,7 +491,6 @@ export function notFoundPage(site) {
 export function missionPage(r, site, ctx) {
   const fig = (src, cap, alt, w = 640, h = 448) =>
     `<figure class="shot"><a href="/assets/missions/${src}" target="_blank" rel="noopener"><img src="/assets/missions/${src}" width="${w}" height="${h}" alt="${esc(alt)}" loading="lazy"></a><figcaption>${cap}</figcaption></figure>`;
-  const frame = ctx.shots ? "" : ` data-noshots="1"`;
   const proof = ctx.shots
     ? box(
         "Proof: the Mission 1 demo",
@@ -501,12 +500,12 @@ export function missionPage(r, site, ctx) {
       )
     : "";
   const ui = ctx.ui?.length
-    ? box("Finding Mission mode", `<div class="shots">${ctx.ui.map((u) => fig(`ui/${u.file}`, esc(u.caption), `PS2 Accent Core Plus: ${u.scene || u.caption}`, u.width, u.height)).join("")}</div>`, "where")
+    ? box("Mission mode in the game", `<p>From the title screen to a cleared mission, on the US disc. The clear screens come from custom missions, so the captions say which slot.</p><div class="shots">${ctx.ui.map((u) => fig(`ui/${u.file}`, esc(u.caption), `PS2 Accent Core Plus: ${u.scene || u.caption}`, u.width, u.height)).join("")}</div>`, "where")
     : "";
   const body = `${relHeader(r, "mission-editor/")}
 <div class="warn"><b>Beta.</b> The field layout and the stock values are read from the game, and three edits are tested: Mission 1's enemy, time and your start life. Stage and music names and the allowed ranges are not checked yet, so some values may do nothing or break a fight. Keep a memory card backup and treat every code on this page as <span class="st st-inferred">INFERRED</span> unless the field table says VERIFIED.</div>
 <noscript><div class="warn danger">The editor needs JavaScript. The finished codes for this release are on the <a href="${r.url}">Codes</a> tab.</div></noscript>
-<div id="med"${frame}>
+<div id="med">
 ${box(
   "Mission Editor",
   `<p class="lead">Rebuild any of the 30 Mission mode slots, then copy the cheat file. Pick a slot, change the rules and either fighter, and the code below lists only the values that differ from the stock mission.</p>
@@ -532,7 +531,7 @@ ${proof}${ui}
 <details class="box" id="fieldstatus"><summary><span>Field table</span></summary><div class="boxin"><p>What each field does and how far it is checked. Statuses follow the <a href="/">site key</a>: VERIFIED was seen in a test run, INFERRED shares the mechanism of a verified field, NOT TESTED was not run.</p><div class="tablewrap"><table class="grid" id="fieldtable"><thead><tr><th>Field</th><th>What it does</th><th class="num">Offset</th><th>Status</th></tr></thead><tbody></tbody></table></div></div></details>
 ${box(
   "About this page",
-  `<p>Mission records are 30 blocks of 0x80 bytes in the game's data at <code>0x302BE0</code>, every field a signed 16-bit value. The stock values are decoded from the US disc and match the game's own info screen for Missions 1 to 25. Slots 26 to 30 appear in the game only after Missions 1 to 25 are cleared, so their stock values are decoded but not photographed.</p>
+  `<p>Mission records are 30 blocks of 0x80 bytes in the game's data at <code>0x302BE0</code>, every field a signed 16-bit value. The stock values are decoded from the US disc and match the game's own info screen for Missions 1 to 25. Slots 26 to 30 appear in the game only after Missions 1 to 25 are cleared; their screenshots were taken after unlocking them on a throwaway card.</p>
 <p>Screenshots are the author's own PCSX2 captures of the unmodified US disc. PCSX2 loads any <code>SERIAL_CRC*.pnach</code> file beside the main one. This is tested: with a different main file in <code>cheats</code>, both loaded and the Mission 1 demo showed on the info screen.</p>`,
 )}
 </div>`;
@@ -541,7 +540,7 @@ ${box(
     desc: `Edit the 30 Mission mode slots of ${r.game.title} (${r.serial}) and get a PCSX2 .pnach file. Preview.`,
     site,
     body,
-    scripts: ["/assets/mission-stock.js", "/assets/mission-data.js", "/assets/mission-editor.js"],
+    scripts: ["/assets/mission-stock.js", "/assets/mission-shots.js", "/assets/mission-data.js", "/assets/mission-editor.js"],
     crumbs: [{ label: "Games", href: "/games/" }, { label: r.game.title, href: `/games/${r.game.slug}/`, game: r.game.id }, { label: r.label, href: r.url }, { label: "Mission Editor" }],
   });
 }

@@ -351,3 +351,5 @@ details.box > .boxin { border-top: 0; }
   #med select { max-width: 98px; }
   #med input[type="number"] { width: 66px; }
 }
+.fightshot { margin-top: 8px; }
+.shots { align-items: start; }

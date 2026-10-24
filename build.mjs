@@ -36,7 +36,8 @@ for (const b of site.shared.priorWork.matchAll(/^- (.+(?:\n  .+)*)/gm)) {
 const missionData = JSON.parse(fs.readFileSync("data/mission-editor.json", "utf8"));
 const SHOTS = path.resolve("src/mission-shots");
 const hasShots = fs.existsSync(SHOTS);
-const missionCtx = { shots: hasShots, ui: hasShots && fs.existsSync(path.join(SHOTS, "ui.json")) ? JSON.parse(fs.readFileSync(path.join(SHOTS, "ui.json"), "utf8")) : [] };
+const missionShots = hasShots && fs.existsSync(path.join(SHOTS, "shots.json")) ? JSON.parse(fs.readFileSync(path.join(SHOTS, "shots.json"), "utf8")) : { info: {}, fights: {}, featured: [] };
+const missionCtx = { shots: hasShots, ui: missionShots.featured };
 for (const r of site.releases) r.hasMissionEditor = r.serial === "SLUS-21847";
 
 // ---- pages ----
@@ -95,6 +96,8 @@ fs.copyFileSync("src/site.js", path.join(A, "site.js"));
 fs.copyFileSync("src/mission-data.js", path.join(A, "mission-data.js"));
 fs.copyFileSync("src/mission-editor.js", path.join(A, "mission-editor.js"));
 fs.writeFileSync(path.join(A, "mission-stock.js"), `window.MISSION_RAW=${JSON.stringify({ STOCK: missionData.stock, FIELDS: missionData.fields })};
+`);
+fs.writeFileSync(path.join(A, "mission-shots.js"), `window.MISSION_SHOTS=${JSON.stringify({ info: missionShots.info, fights: missionShots.fights })};
 `);
 if (hasShots) {
   fs.mkdirSync(path.join(A, "missions"), { recursive: true });
