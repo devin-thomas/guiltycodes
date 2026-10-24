@@ -211,7 +211,7 @@ const preload: PreloadResult = writePreloadForAgents({
   name: "Guilty Codes",
   summary: [
     "Guilty Codes is a cheat code site for the Guilty Gear PS2 games (X, XX / X2, #Reload, Slash, Accent Core, Accent Core Plus and Isuka), in the style of a pre-2009 cheat site. Every code lists its game release, serial and PCSX2 CRC, raw code, PCSX2 patch text, effect, test result, evidence level and credit.",
-    "Status labels: VERIFIED codes passed a recorded test, INFERRED codes are derived but not yet tested, SUPERSEDED codes were replaced by a newer code. Downloadable .pnach files are at /downloads/.",
+    "Status labels: VERIFIED means the effect was seen in a test run on the pinned executable; INFERRED means the same mechanism as a verified code, not run individually; SUPERSEDED marks a code replaced by a corrected version. Downloadable .pnach files are at /downloads/.",
   ],
   groupDepth: 3,
   partBudget: 100_000,
