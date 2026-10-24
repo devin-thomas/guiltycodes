@@ -30,6 +30,8 @@ import {
 } from "./build/render.ts";
 import { scrub, parsePnach } from "./build/lib.ts";
 import { FEATURE_CATEGORIES } from "./build/catalog.ts";
+import { writePreloadForAgents } from "./build/preload.ts";
+import type { PreloadResult } from "./build/preload.ts";
 
 const DIST: string = path.resolve("dist");
 const ORIGIN: "https://guiltycodes.pages.dev" = "https://guiltycodes.pages.dev";
@@ -199,10 +201,24 @@ fs.writeFileSync(
 );
 fs.writeFileSync(
   path.join(DIST, "_headers"),
-  `/*\n  X-Content-Type-Options: nosniff\n  Referrer-Policy: strict-origin-when-cross-origin\n  X-Frame-Options: DENY\n/assets/*\n  Cache-Control: public, max-age=3600\n/pnach/*\n  Content-Type: text/plain; charset=utf-8\n`,
+  `/*\n  X-Content-Type-Options: nosniff\n  Referrer-Policy: strict-origin-when-cross-origin\n  X-Frame-Options: DENY\n/assets/*\n  Cache-Control: public, max-age=3600\n/pnach/*\n  Content-Type: text/plain; charset=utf-8\n/preload-for-agents/*\n  Content-Type: text/plain; charset=utf-8\n/llms.txt\n  Content-Type: text/plain; charset=utf-8\n`,
 );
+
+// Plain-text mirror of every page for agents and readers without JavaScript; it must run after all pages are written.
+const preload: PreloadResult = writePreloadForAgents({
+  dist: DIST,
+  origin: ORIGIN,
+  name: "Guilty Codes",
+  summary: [
+    "Guilty Codes is a cheat code site for the Guilty Gear PS2 games (X, XX / X2, #Reload, Slash, Accent Core, Accent Core Plus and Isuka), in the style of a pre-2009 cheat site. Every code lists its game release, serial and PCSX2 CRC, raw code, PCSX2 patch text, effect, test result, evidence level and credit.",
+    "Status labels: VERIFIED codes passed a recorded test, INFERRED codes are derived but not yet tested, SUPERSEDED codes were replaced by a newer code. Downloadable .pnach files are at /downloads/.",
+  ],
+  groupDepth: 3,
+  partBudget: 100_000,
+  inlineBudget: 60_000,
+});
 
 const codes: number = site.releases.reduce((n: number, r: Release): number => n + r.codes.length, 0);
 console.log(
-  `built ${urls.length} pages, ${codes} feature pages, ${files.reduce((n: number, file: Download): number => n + file.sectionCount, 0)} downloadable patch sections, ${site.releases.length} releases -> ${DIST}`,
+  `built ${urls.length} pages, ${codes} feature pages, ${files.reduce((n: number, file: Download): number => n + file.sectionCount, 0)} downloadable patch sections, ${site.releases.length} releases, ${preload.parts} agent text parts -> ${DIST}`,
 );

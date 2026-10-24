@@ -48,6 +48,16 @@ evidence and artifact revision; the build validates those pins.
 
 First deploy: `npx wrangler login`, then `npx wrangler pages project create guiltycodes --production-branch main`. With more than one Cloudflare account, set `CLOUDFLARE_ACCOUNT_ID`.
 
+## For agents
+
+Give an AI agent or web reader https://guiltycodes.pages.dev/preload-for-agents. It needs no JavaScript, sign-in or GitHub access. The build writes it last, from the finished `dist/` pages only (`build/preload.ts`), so it carries exactly what a visitor can already see:
+
+- `/preload-for-agents`: what the site is, how to read it, the list of text parts, and a link to every page.
+- `/preload-for-agents/all.txt`: every page as plain text in one file; `/preload-for-agents/NN-*.txt`: the same text in parts of about 100k characters, split by release.
+- `/llms.txt`: a short map pointing at the above.
+
+Each page in the text starts with its URL and title; raw codes and PCSX2 patch text are copied exactly.
+
 ## Downloads and releases
 
 The build writes each scrubbed `.pnach` to `dist/pnach/`, a zip to `dist/downloads/guiltycodes-pnach.zip`, and the `/downloads/` page. Ordinary builds leave the committed release snapshot in `pnach/` unchanged. Updating that snapshot is an explicit release operation: `npm run build -- --write-pnach` also writes `pnach/` and `pnach/index.json`. Review every changed byte before committing a release update.
