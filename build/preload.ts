@@ -31,7 +31,7 @@ export type PreloadResult = {
   readonly chars: number;
 };
 
-export const PRELOAD_ROUTE: string = "/preload-for-agents";
+const PRELOAD_ROUTE: string = "/preload-for-agents";
 
 const ENTITIES: Readonly<Record<string, string>> = {
   amp: "&",
@@ -52,7 +52,7 @@ const ENTITIES: Readonly<Record<string, string>> = {
   copy: "©",
 };
 
-export function decode(text: string): string {
+function decode(text: string): string {
   return text.replace(/&(#x[0-9a-f]+|#[0-9]+|[a-z]+);/gi, (whole: string, name: string): string => {
     if (name[0] === "#") {
       const code: number = name[1] === "x" || name[1] === "X" ? parseInt(name.slice(2), 16) : parseInt(name.slice(1), 10);
@@ -62,7 +62,7 @@ export function decode(text: string): string {
   });
 }
 
-export function escapeHtml(text: string): string {
+function escapeHtml(text: string): string {
   return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
 
@@ -81,46 +81,46 @@ function oneLine(html: string): string {
     .trim();
 }
 
-function absolute(href: string, origin: string, page: string): string {
+function absoluteUrl(href: string, origin: string, page: string): string {
   if (/^[a-z]+:/i.test(href)) return href;
   if (href.startsWith("#")) return `${origin}${page}${href}`;
   return new URL(href, `${origin}${page}`).href;
 }
 
 // Rows of [th, td] read as "Key: value" lines; anything else becomes a pipe table headed by its first row.
-function table(html: string): string {
+function tableToText(html: string): string {
   let rows: string[][] = [];
-  let kv: boolean = true;
+  let isKeyValue: boolean = true;
   for (let row of html.matchAll(/<tr\b[^>]*>([\s\S]*?)<\/tr>/gi)) {
     let cells: string[] = [];
-    let kinds: string[] = [];
+    let cellTags: string[] = [];
     for (let cell of (row[1] ?? "").matchAll(/<(th|td)\b[^>]*>([\s\S]*?)<\/\1>/gi)) {
-      kinds.push((cell[1] ?? "").toLowerCase());
+      cellTags.push((cell[1] ?? "").toLowerCase());
       cells.push(oneLine(cell[2] ?? "").replace(/\|/g, "\\|"));
     }
     if (!cells.length) continue;
-    if (kinds.length !== 2 || kinds[0] !== "th" || kinds[1] !== "td") kv = false;
+    if (cellTags.length !== 2 || cellTags[0] !== "th" || cellTags[1] !== "td") isKeyValue = false;
     rows.push(cells);
   }
   if (!rows.length) return "";
-  if (kv) return `\n\n${rows.map((r: string[]): string => `${r[0] ?? ""}: ${r[1] ?? ""}`).join("\n")}\n\n`;
-  const width: number = Math.max(...rows.map((r: string[]): number => r.length));
-  function line(r: string[]): string {
-    return `| ${Array.from({ length: width }, (_: unknown, i: number): string => r[i] ?? "").join(" | ")} |`;
+  if (isKeyValue) return `\n\n${rows.map((row: string[]): string => `${row[0] ?? ""}: ${row[1] ?? ""}`).join("\n")}\n\n`;
+  const width: number = Math.max(...rows.map((row: string[]): number => row.length));
+  function pipeRow(row: string[]): string {
+    return `| ${Array.from({ length: width }, (_: unknown, i: number): string => row[i] ?? "").join(" | ")} |`;
   }
   let head: string[] = rows[0] ?? [];
   let body: string[][] = rows.slice(1);
-  return `\n\n${[line(head), `|${" --- |".repeat(width)}`, ...body.map(line)].join("\n")}\n\n`;
+  return `\n\n${[pipeRow(head), `|${" --- |".repeat(width)}`, ...body.map(pipeRow)].join("\n")}\n\n`;
 }
 
 // Converts the HTML our static renderers emit (headings, prose, lists, tables, code) into Markdown-style text.
 export function htmlToText(html: string, origin: string, page: string): string {
-  let blocks: string[] = [];
-  function hold(text: string): string {
-    blocks.push(text);
-    return `\u0000${blocks.length - 1}\u0000`;
+  let heldBlocks: string[] = [];
+  function holdBlock(block: string): string {
+    heldBlocks.push(block);
+    return `\u0000${heldBlocks.length - 1}\u0000`;
   }
-  let s: string = html
+  let text: string = html
     .replace(/<!--[\s\S]*?-->/g, "")
     .replace(/<(script|style|template|button|select|textarea)\b[\s\S]*?<\/\1>/gi, "")
     // Labels for removed form controls ("Filter codes") are not page content.
@@ -135,26 +135,30 @@ export function htmlToText(html: string, origin: string, page: string): string {
       return alt ? ` [Image: ${decode(alt)}] ` : "";
     })
     .replace(/<pre\b[^>]*>([\s\S]*?)<\/pre>/gi, (_: string, body: string): string =>
-      hold(`\n\n\`\`\`\n${decode(stripTags(body)).replace(/\n+$/, "")}\n\`\`\`\n\n`),
+      holdBlock(`\n\n\`\`\`\n${decode(stripTags(body)).replace(/\n+$/, "")}\n\`\`\`\n\n`),
     )
     .replace(/<code\b[^>]*>([\s\S]*?)<\/code>/gi, (_: string, body: string): string => {
-      const text: string = oneLine(body);
-      return text ? hold(`\`${text}\``) : "";
+      const code: string = oneLine(body);
+      return code ? holdBlock(`\`${code}\``) : "";
     })
     .replace(/<a\b([^>]*)>([\s\S]*?)<\/a>/gi, (_: string, attrs: string, body: string): string => {
-      const text: string = oneLine(body.replace(/\u0000(\d+)\u0000/g, (_m: string, i: string): string => blocks[Number(i)] ?? ""));
+      const linkText: string = oneLine(
+        body.replace(/\u0000(\d+)\u0000/g, (_match: string, index: string): string => heldBlocks[Number(index)] ?? ""),
+      );
       const href: string | undefined = /\bhref="([^"]*)"/i.exec(attrs)?.[1];
-      if (!text) return "";
-      if (!href) return text;
-      const url: string = absolute(decode(href), origin, page);
-      return hold(url === text ? url : `[${text}](${url})`);
+      if (!linkText) return "";
+      if (!href) return linkText;
+      const url: string = absoluteUrl(decode(href), origin, page);
+      return holdBlock(url === linkText ? url : `[${linkText}](${url})`);
     })
     .replace(/<(b|strong)\b[^>]*>([\s\S]*?)<\/\1>/gi, (_: string, _tag: string, body: string): string => {
-      const text: string = body.trim();
-      return text ? `**${text}**` : "";
+      const bold: string = body.trim();
+      return bold ? `**${bold}**` : "";
     })
     .replace(/<table\b[^>]*>[\s\S]*?<\/table>/gi, (whole: string): string =>
-      hold(table(whole.replace(/\u0000(\d+)\u0000/g, (_m: string, i: string): string => blocks[Number(i)] ?? ""))),
+      holdBlock(
+        tableToText(whole.replace(/\u0000(\d+)\u0000/g, (_match: string, index: string): string => heldBlocks[Number(index)] ?? "")),
+      ),
     )
     .replace(
       /<h([1-6])\b[^>]*>([\s\S]*?)<\/h\1>/gi,
@@ -168,27 +172,27 @@ export function htmlToText(html: string, origin: string, page: string): string {
       "\n\n",
     );
   // Adjacent links ("[A](a)[B](b)") read as one run of text without a separator.
-  s = s.replace(/(\u0000\d+\u0000)(?=\u0000\d+\u0000)/g, (held: string): string => `${held} `);
-  s = decode(stripTags(s));
-  s = s
+  text = text.replace(/(\u0000\d+\u0000)(?=\u0000\d+\u0000)/g, (held: string): string => `${held} `);
+  text = decode(stripTags(text));
+  text = text
     .split("\n")
-    .map((l: string): string => l.replace(/[ \t ]+/g, " ").trim())
+    .map((line: string): string => line.replace(/[ \t ]+/g, " ").trim())
     .join("\n")
     .replace(/^- *$/gm, "")
     .replace(/\n{3,}/g, "\n\n");
   // Restore held blocks last so code keeps its exact whitespace.
-  for (let i: number = blocks.length - 1; i >= 0; i--) s = s.split(`\u0000${i}\u0000`).join(blocks[i] ?? "");
-  return s.replace(/\n{3,}/g, "\n\n").trim();
+  for (let i: number = heldBlocks.length - 1; i >= 0; i--) text = text.split(`\u0000${i}\u0000`).join(heldBlocks[i] ?? "");
+  return text.replace(/\n{3,}/g, "\n\n").trim();
 }
 
 function htmlFiles(dir: string, base: string = dir): string[] {
-  let out: string[] = [];
+  let files: string[] = [];
   for (let entry of fs.readdirSync(dir, { withFileTypes: true })) {
-    const full: string = path.join(dir, entry.name);
-    if (entry.isDirectory()) out.push(...htmlFiles(full, base));
-    else if (entry.name.endsWith(".html")) out.push(path.relative(base, full).split(path.sep).join("/"));
+    const fullPath: string = path.join(dir, entry.name);
+    if (entry.isDirectory()) files.push(...htmlFiles(fullPath, base));
+    else if (entry.name.endsWith(".html")) files.push(path.relative(base, fullPath).split(path.sep).join("/"));
   }
-  return out;
+  return files;
 }
 
 function routeOf(file: string): string {
@@ -197,7 +201,7 @@ function routeOf(file: string): string {
   return `/${file.slice(0, -".html".length)}`;
 }
 
-export function readPages(dist: string, origin: string): PreloadPage[] {
+function readPages(dist: string, origin: string): PreloadPage[] {
   let byUrl: Map<string, string> = new Map();
   for (let file of htmlFiles(dist)) {
     if (file === "404.html" || file === `${PRELOAD_ROUTE.slice(1)}.html`) continue;
@@ -236,7 +240,7 @@ function groupKey(url: string, depth: number): string {
   return parts.length ? `/${parts.slice(0, depth).join("/")}/` : "/";
 }
 
-function slug(key: string): string {
+function slugOf(key: string): string {
   return (
     key
       .replace(/^\/|\/$/g, "")
@@ -250,7 +254,7 @@ type Chunk = {
   readonly slug: string;
   readonly pages: readonly PreloadPage[];
   readonly size: number;
-  readonly split: boolean;
+  readonly isSplit: boolean;
 };
 
 // Pages grouped by URL prefix; small neighbouring groups share a part, and an oversized group splits at page boundaries.
@@ -279,20 +283,20 @@ export function splitParts(pages: readonly PreloadPage[], options: PreloadOption
     }
     const label: string = shortTitle(group[0]?.title ?? key, options.name);
     pieces.forEach((piece: PreloadPage[], i: number): void => {
-      const split: boolean = pieces.length > 1;
+      const isSplit: boolean = pieces.length > 1;
       chunks.push({
-        label: split ? `${label}, section ${i + 1} of ${pieces.length}` : label,
-        slug: split ? `${slug(key)}-${i + 1}` : slug(key),
+        label: isSplit ? `${label}, section ${i + 1} of ${pieces.length}` : label,
+        slug: isSplit ? `${slugOf(key)}-${i + 1}` : slugOf(key),
         pages: piece,
-        size: piece.reduce((n: number, p: PreloadPage): number => n + pageText(p, options.origin).length, 0),
-        split,
+        size: piece.reduce((total: number, page: PreloadPage): number => total + pageText(page, options.origin).length, 0),
+        isSplit,
       });
     });
   }
   let merged: Chunk[] = [];
   for (let chunk of chunks) {
     const last: Chunk | undefined = merged[merged.length - 1];
-    if (last && !chunk.split && !last.split && last.size + chunk.size <= options.partBudget) {
+    if (last && !chunk.isSplit && !last.isSplit && last.size + chunk.size <= options.partBudget) {
       merged[merged.length - 1] = {
         ...last,
         label: `${last.label}; ${chunk.label}`,
@@ -307,7 +311,7 @@ export function splitParts(pages: readonly PreloadPage[], options: PreloadOption
       file: `${String(i + 1).padStart(2, "0")}-${chunk.slug}.txt`,
       title: chunk.label,
       pages: chunk.pages,
-      text: header + chunk.pages.map((p: PreloadPage): string => pageText(p, options.origin)).join("\n"),
+      text: header + chunk.pages.map((page: PreloadPage): string => pageText(page, options.origin)).join("\n"),
     };
   });
 }
@@ -317,23 +321,23 @@ function shortTitle(title: string, name: string): string {
   return title.endsWith(suffix) ? title.slice(0, -suffix.length) : title;
 }
 
-function size(chars: number): string {
+function formatSize(chars: number): string {
   return chars < 10_000 ? `${(chars / 1000).toFixed(1)}k characters` : `${Math.round(chars / 1000)}k characters`;
 }
 
-export function preloadPage(options: PreloadOptions, pages: readonly PreloadPage[], parts: readonly PreloadPart[], all: string): string {
+function preloadPage(options: PreloadOptions, pages: readonly PreloadPage[], parts: readonly PreloadPart[], all: string): string {
   const base: string = `${options.origin}${PRELOAD_ROUTE}`;
-  const inline: boolean = all.length <= options.inlineBudget;
+  const isInline: boolean = all.length <= options.inlineBudget;
   const partRows: string = parts
     .map(
-      (p: PreloadPart, i: number): string =>
-        `<li><a href="${base}/${p.file}">Part ${i + 1}: ${escapeHtml(p.title)}</a> (${p.pages.length} pages, ${size(p.text.length)})</li>`,
+      (part: PreloadPart, i: number): string =>
+        `<li><a href="${base}/${part.file}">Part ${i + 1}: ${escapeHtml(part.title)}</a> (${part.pages.length} pages, ${formatSize(part.text.length)})</li>`,
     )
     .join("\n");
   const index: string = parts
     .map(
-      (p: PreloadPart, i: number): string =>
-        `<h3>Part ${i + 1}</h3>\n<ul>\n${p.pages.map((pg: PreloadPage): string => `<li><a href="${options.origin}${pg.url}">${escapeHtml(pg.title)}</a></li>`).join("\n")}\n</ul>`,
+      (part: PreloadPart, i: number): string =>
+        `<h3>Part ${i + 1}</h3>\n<ul>\n${part.pages.map((page: PreloadPage): string => `<li><a href="${options.origin}${page.url}">${escapeHtml(page.title)}</a></li>`).join("\n")}\n</ul>`,
     )
     .join("\n");
   return `<!doctype html>
@@ -349,27 +353,27 @@ export function preloadPage(options: PreloadOptions, pages: readonly PreloadPage
 <body>
 <main>
 <h1>${escapeHtml(options.name)}: preload for agents</h1>
-${options.summary.map((p: string): string => `<p>${escapeHtml(p)}</p>`).join("\n")}
+${options.summary.map((paragraph: string): string => `<p>${escapeHtml(paragraph)}</p>`).join("\n")}
 <h2>How to read this</h2>
 <ul>
 <li>This page and the files it links are plain text and HTML with no JavaScript, no sign-in and no GitHub access needed.</li>
 <li>They are generated at build time from the site's own public pages, so they say exactly what ${escapeHtml(options.origin)} shows a visitor, and nothing more.</li>
-<li>${pages.length} pages, ${size(all.length)} in total.${inline ? " The full text of every page is included below." : ` Read the parts below in order, or fetch <a href="${base}/all.txt">all.txt</a> (every page in one file) if you can read a file that size.`}</li>
+<li>${pages.length} pages, ${formatSize(all.length)} in total.${isInline ? " The full text of every page is included below." : ` Read the parts below in order, or fetch <a href="${base}/all.txt">all.txt</a> (every page in one file) if you can read a file that size.`}</li>
 <li>Each page in the text starts with its URL and title. Code blocks are copied exactly.</li>
 </ul>
 <h2>Full text</h2>
 <ul>
-<li><a href="${base}/all.txt">Every page in one file</a> (${size(all.length)})</li>
-${inline ? "" : partRows}
+<li><a href="${base}/all.txt">Every page in one file</a> (${formatSize(all.length)})</li>
+${isInline ? "" : partRows}
 </ul>
-${inline ? `<pre style="white-space: pre-wrap">${escapeHtml(all)}</pre>` : `<h2>Page index</h2>\n${index}`}
+${isInline ? `<pre style="white-space: pre-wrap">${escapeHtml(all)}</pre>` : `<h2>Page index</h2>\n${index}`}
 </main>
 </body>
 </html>
 `;
 }
 
-export function llmsTxt(options: PreloadOptions, parts: readonly PreloadPart[], all: string): string {
+function llmsTxt(options: PreloadOptions, parts: readonly PreloadPart[], all: string): string {
   const base: string = `${options.origin}${PRELOAD_ROUTE}`;
   return `# ${options.name}
 
@@ -379,19 +383,19 @@ Start here: ${base} (an agent-readable overview with the full text of the site, 
 
 ## Full text
 
-- [Every page in one file](${base}/all.txt): ${size(all.length)}
-${parts.length > 1 ? parts.map((p: PreloadPart, i: number): string => `- [Part ${i + 1}: ${p.title}](${base}/${p.file}): ${size(p.text.length)}`).join("\n") + "\n" : ""}`;
+- [Every page in one file](${base}/all.txt): ${formatSize(all.length)}
+${parts.length > 1 ? parts.map((part: PreloadPart, i: number): string => `- [Part ${i + 1}: ${part.title}](${base}/${part.file}): ${formatSize(part.text.length)}`).join("\n") + "\n" : ""}`;
 }
 
 export function writePreloadForAgents(options: PreloadOptions): PreloadResult {
   let pages: PreloadPage[] = readPages(options.dist, options.origin);
   let parts: PreloadPart[] = splitParts(pages, options);
-  const all: string = `${options.name}: every page as plain text\nIndex: ${options.origin}${PRELOAD_ROUTE}\nPages: ${pages.length}\n\n${pages.map((p: PreloadPage): string => pageText(p, options.origin)).join("\n")}`;
+  const all: string = `${options.name}: every page as plain text\nIndex: ${options.origin}${PRELOAD_ROUTE}\nPages: ${pages.length}\n\n${pages.map((page: PreloadPage): string => pageText(page, options.origin)).join("\n")}`;
   const dir: string = path.join(options.dist, PRELOAD_ROUTE.slice(1));
   fs.rmSync(dir, { recursive: true, force: true });
   fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(path.join(dir, "all.txt"), all);
-  if (parts.length > 1) for (let p of parts) fs.writeFileSync(path.join(dir, p.file), p.text);
+  if (parts.length > 1) for (let part of parts) fs.writeFileSync(path.join(dir, part.file), part.text);
   fs.writeFileSync(path.join(options.dist, `${PRELOAD_ROUTE.slice(1)}.html`), preloadPage(options, pages, parts, all));
   fs.writeFileSync(path.join(options.dist, "llms.txt"), llmsTxt(options, parts, all));
   return { pages: pages.length, parts: parts.length, chars: all.length };

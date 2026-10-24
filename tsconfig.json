@@ -13,8 +13,10 @@
     "noPropertyAccessFromIndexSignature": true,
     "allowImportingTsExtensions": true,
     "noEmit": true,
+    "allowJs": true,
+    "checkJs": true,
     "skipLibCheck": false,
     "types": ["node"]
   },
-  "include": ["build.ts", "build/**/*.ts", "src/**/*.ts", "tools/**/*.ts"]
+  "include": ["build.ts", "build/**/*.ts", "src/**/*.ts", "tools/**/*.ts", "test/preload.test.mjs"]
 }
