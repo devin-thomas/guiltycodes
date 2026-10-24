@@ -3,33 +3,33 @@ import ts from "typescript";
 import fs from "node:fs";
 
 type Edit = { readonly start: number; readonly end: number; readonly replacement: string };
-const fix: boolean = process.argv.includes("--fix");
-let config: ReturnType<typeof ts.readConfigFile> = ts.readConfigFile("tsconfig.json", (fileName: string): string | undefined =>
+const shouldFix: boolean = process.argv.includes("--fix");
+let configFile: ReturnType<typeof ts.readConfigFile> = ts.readConfigFile("tsconfig.json", (fileName: string): string | undefined =>
   ts.sys.readFile(fileName),
 );
-if (config.error) throw new Error(ts.flattenDiagnosticMessageText(config.error.messageText, "\n"));
-const rawConfig: unknown = config.config;
+if (configFile.error) throw new Error(ts.flattenDiagnosticMessageText(configFile.error.messageText, "\n"));
+const rawConfig: unknown = configFile.config;
 if (typeof rawConfig !== "object" || rawConfig === null) throw new Error("Invalid TypeScript configuration");
 let parsed: ts.ParsedCommandLine = ts.parseJsonConfigFileContent(rawConfig, ts.sys, ".");
 let program: ts.Program = ts.createProgram(parsed.fileNames, parsed.options);
 let checker: ts.TypeChecker = program.getTypeChecker();
 let failures: string[] = [];
-let checked: number = 0;
+let checkedCount: number = 0;
 
-function mutable(type: ts.Type, seen: Set<ts.Type>): boolean {
+function isMutableType(type: ts.Type, seen: Set<ts.Type>): boolean {
   if (seen.has(type)) return false;
   seen.add(type);
-  if (type.isUnionOrIntersection()) return type.types.some((member: ts.Type): boolean => mutable(member, seen));
+  if (type.isUnionOrIntersection()) return type.types.some((member: ts.Type): boolean => isMutableType(member, seen));
   if (!(type.flags & ts.TypeFlags.Object)) return false;
   if (type.getCallSignatures().length) return false;
   const name: string | undefined = type.getSymbol()?.getName();
   if (name === "ReadonlyArray" || name === "ReadonlyMap" || name === "ReadonlySet") {
-    return checker.getTypeArguments(type as ts.TypeReference).some((argument: ts.Type): boolean => mutable(argument, seen));
+    return checker.getTypeArguments(type as ts.TypeReference).some((argument: ts.Type): boolean => isMutableType(argument, seen));
   }
   if (checker.isTupleType(type)) {
     // TypeScript exposes this runtime test as boolean rather than a type predicate.
     let tuple: ts.TupleTypeReference = type as ts.TupleTypeReference;
-    return !tuple.target.readonly || checker.getTypeArguments(tuple).some((element: ts.Type): boolean => mutable(element, seen));
+    return !tuple.target.readonly || checker.getTypeArguments(tuple).some((element: ts.Type): boolean => isMutableType(element, seen));
   }
   if (checker.isArrayType(type)) return true;
   if (name === "Map" || name === "Set" || name === "RegExp" || name === "Date" || name === "URL") return true;
@@ -38,8 +38,8 @@ function mutable(type: ts.Type, seen: Set<ts.Type>): boolean {
     return (
       type.getProperties().some((property: ts.Symbol): boolean => {
         let declaration: ts.Declaration | undefined = property.valueDeclaration ?? property.declarations?.[0];
-        return declaration !== undefined && mutable(checker.getTypeOfSymbolAtLocation(property, declaration), seen);
-      }) || checker.getIndexInfosOfType(type).some((info: ts.IndexInfo): boolean => mutable(info.type, seen))
+        return declaration !== undefined && isMutableType(checker.getTypeOfSymbolAtLocation(property, declaration), seen);
+      }) || checker.getIndexInfosOfType(type).some((info: ts.IndexInfo): boolean => isMutableType(info.type, seen))
     );
   }
   for (let property of type.getProperties()) {
@@ -49,9 +49,9 @@ function mutable(type: ts.Type, seen: Set<ts.Type>): boolean {
     if (ts.isSetAccessorDeclaration(declaration)) return true;
     const readonly: boolean =
       (ts.getCombinedModifierFlags(declaration) & ts.ModifierFlags.Readonly) !== 0 || ts.isGetAccessorDeclaration(declaration);
-    if (!readonly || mutable(checker.getTypeOfSymbolAtLocation(property, declaration), seen)) return true;
+    if (!readonly || isMutableType(checker.getTypeOfSymbolAtLocation(property, declaration), seen)) return true;
   }
-  return checker.getIndexInfosOfType(type).some((info: ts.IndexInfo): boolean => !info.isReadonly || mutable(info.type, seen));
+  return checker.getIndexInfosOfType(type).some((info: ts.IndexInfo): boolean => !info.isReadonly || isMutableType(info.type, seen));
 }
 function report(file: ts.SourceFile, node: ts.Node, message: string): void {
   let position: ts.LineAndCharacter = file.getLineAndCharacterOfPosition(node.getStart(file));
@@ -59,15 +59,15 @@ function report(file: ts.SourceFile, node: ts.Node, message: string): void {
 }
 function checkFile(file: ts.SourceFile): void {
   if (file.isDeclarationFile || file.fileName.includes("node_modules/")) return;
-  checked++;
+  checkedCount++;
   let edits: Edit[] = [];
   function visit(node: ts.Node): void {
     if (ts.isVariableDeclarationList(node) && node.flags & ts.NodeFlags.Const) {
       const isMutable: boolean = node.declarations.some((declaration: ts.VariableDeclaration): boolean =>
-        mutable(checker.getTypeAtLocation(declaration.name), new Set()),
+        isMutableType(checker.getTypeAtLocation(declaration.name), new Set()),
       );
       if (isMutable) {
-        if (fix) edits.push({ start: node.getStart(file), end: node.getStart(file) + 5, replacement: "let" });
+        if (shouldFix) edits.push({ start: node.getStart(file), end: node.getStart(file) + 5, replacement: "let" });
         else report(file, node, "Use let for an exposed mutable graph or resource");
       }
     }
@@ -94,7 +94,7 @@ function checkFile(file: ts.SourceFile): void {
     ts.forEachChild(node, visit);
   }
   visit(file);
-  if (fix && edits.length) {
+  if (shouldFix && edits.length) {
     let source: string = file.text;
     for (const edit of edits.sort((left: Edit, right: Edit): number => right.start - left.start))
       source = source.slice(0, edit.start) + edit.replacement + source.slice(edit.end);
@@ -105,4 +105,4 @@ for (let file of program.getSourceFiles()) checkFile(file);
 if (failures.length) {
   console.error(failures.join("\n"));
   process.exitCode = 1;
-} else console.log(`House checks passed for ${checked} TypeScript files${fix ? " (mutable bindings repaired)" : ""}.`);
+} else console.log(`House checks passed for ${checkedCount} TypeScript files${shouldFix ? " (mutable bindings repaired)" : ""}.`);

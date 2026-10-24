@@ -1,8 +1,13 @@
+// ESLint gate for owned TypeScript; tsc --noEmit and tools/check-style.ts are separate gates.
 import tseslint from "typescript-eslint";
 
-export default tseslint.config(
+/** @typedef {import("typescript-eslint").ConfigArray} ConfigArray */
+/** @typedef {ConfigArray[number]} Config */
+
+/** @type {ConfigArray} */
+let config = tseslint.config(
   { ignores: ["dist/**", "node_modules/**"] },
-  ...tseslint.configs.recommendedTypeChecked.map((config) => ({ ...config, files: ["**/*.ts"] })),
+  ...tseslint.configs.recommendedTypeChecked.map(/** @type {(preset: Config) => Config} */ (preset) => ({ ...preset, files: ["**/*.ts"] })),
   {
     files: ["**/*.ts"],
     languageOptions: { parserOptions: { projectService: true, tsconfigRootDir: import.meta.dirname } },
@@ -19,9 +24,16 @@ export default tseslint.config(
       "@typescript-eslint/no-non-null-assertion": "error",
       "@typescript-eslint/no-explicit-any": "error",
       "@typescript-eslint/ban-ts-comment": "error",
-      "@typescript-eslint/no-floating-promises": ["error", { ignoreVoid: false }],
+      // node:test owns the promise each test() call returns and reports its failure.
+      "@typescript-eslint/no-floating-promises": [
+        "error",
+        { ignoreVoid: false, allowForKnownSafeCalls: [{ from: "package", package: "node:test", name: ["test"] }] },
+      ],
       "@typescript-eslint/switch-exhaustiveness-check": "error",
       "@typescript-eslint/array-type": ["error", { default: "array-simple" }],
     },
   },
+  { linterOptions: { reportUnusedDisableDirectives: "error" } },
 );
+
+export default config;

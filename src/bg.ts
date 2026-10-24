@@ -5,21 +5,21 @@ import scene from "@uppercut-labs/dreamcast-backgrounds/scenes/vector-dojo-showd
 
 let handle: BackgroundHandle | null = null;
 
-export function start(el: string): BackgroundHandle {
+export function startBackground(selector: string): BackgroundHandle {
   if (handle) return handle;
-  const still: boolean = matchMedia("(prefers-reduced-motion: reduce)").matches;
-  const small: boolean = Math.min(innerWidth, innerHeight) < 700;
+  const prefersStill: boolean = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const isSmallViewport: boolean = Math.min(innerWidth, innerHeight) < 700;
   handle = createBackground({
-    element: el,
+    element: selector,
     scene,
-    motion: still ? "still" : "ambient",
-    quality: small ? "low" : "auto",
+    motion: prefersStill ? "still" : "ambient",
+    quality: isSmallViewport ? "low" : "auto",
     camera: "survey",
   });
   return handle;
 }
 
-export function stop(): void {
+export function stopBackground(): void {
   handle?.dispose();
   handle = null;
 }

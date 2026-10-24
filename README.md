@@ -48,6 +48,16 @@ evidence and artifact revision; the build validates those pins.
 
 First deploy: `npx wrangler login`, then `npx wrangler pages project create guiltycodes --production-branch main`. With more than one Cloudflare account, set `CLOUDFLARE_ACCOUNT_ID`.
 
+## For agents
+
+Give an AI agent or web reader https://guiltycodes.pages.dev/preload-for-agents. It needs no JavaScript, sign-in or GitHub access. The build writes it last, from the finished `dist/` pages only (`build/preload.ts`), so it carries exactly what a visitor can already see:
+
+- `/preload-for-agents`: what the site is, how to read it, the list of text parts, and a link to every page.
+- `/preload-for-agents/all.txt`: every page as plain text in one file; `/preload-for-agents/NN-*.txt`: the same text in parts of about 100k characters, split by release.
+- `/llms.txt`: a short map pointing at the above.
+
+Each page in the text starts with its URL and title; raw codes and PCSX2 patch text are copied exactly.
+
 ## Downloads and releases
 
 The build writes each scrubbed `.pnach` to `dist/pnach/`, a zip to `dist/downloads/guiltycodes-pnach.zip`, and the `/downloads/` page. Ordinary builds leave the committed release snapshot in `pnach/` unchanged. Updating that snapshot is an explicit release operation: `npm run build -- --write-pnach` also writes `pnach/` and `pnach/index.json`. Review every changed byte before committing a release update.
@@ -126,11 +136,11 @@ src/               site.css, site.ts, bg.ts
 
 ## TypeScript checks
 
-`npm run typecheck` covers the build entry point, every production module, both browser clients, shared search validation, and the house-check tool. The compiler enables strict mode, unchecked-index protection, exact optional properties, override checks, fallthrough checks, implicit-return checks, and index-signature access checks. External YAML/JSON starts as `unknown` and passes boundary validators. Catalog feature kinds and unlock variants have named contracts; complete consumers use the shared `assertNever`.
+`npm run typecheck` covers the build entry point, every production module, both browser clients, shared search validation, the house-check tool, the TypeScript tests and the checked-JavaScript ESLint configuration. The compiler enables strict mode, erasable-syntax-only and verbatim module syntax (Node runs the `.ts` files directly), unchecked-index protection, exact optional properties, override checks, fallthrough checks, implicit-return checks, and index-signature access checks. External YAML/JSON starts as `unknown` and passes boundary validators. Catalog feature kinds and unlock variants have named contracts; complete consumers use the shared `assertNever`.
 
 `npm run lint` uses type-aware ESLint at error severity and a TypeScript compiler API house check for mutable graphs behind `const`, named arrow behavior, double assertions and non-boolean membership callbacks. Explicit variable, parameter and callback return annotations are required. `prefer-const` and `prefer-as-const` are deliberately disabled because the house guide requires mutable resources to use `let` and permits precise literal annotations. Readonly contracts belong to their owning data types; build assembly state and DOM resources stay mutable.
 
-`npm run format:check` checks source/configuration/test formatting. Protected release artifacts, CSS, content documentation and generated output are excluded from incidental formatting. `npm test` imports the actual TypeScript modules directly. With `RETRO_REPO` set, it also exercises the complete source catalog and generated pages. CI runs the compiler, style tools and self-contained public fixtures. The full private catalog check and build run locally with the pinned research input before publication; CI does not deploy.
+`npm run format:check` checks source/configuration/test formatting. Protected release artifacts, CSS, content documentation and generated output are excluded from incidental formatting. `npm test` runs the TypeScript tests in `test/*.test.ts`, which import the actual modules directly; the build modules read nothing from the environment at import time. With `RETRO_REPO` set, it also exercises the complete source catalog and generated pages. CI runs the compiler, style tools and self-contained public fixtures. The full private catalog check and build run locally with the pinned research input before publication; CI does not deploy.
 
 Browser entry points `src/site.ts` and `src/bg.ts` are bundled together with module splitting. No executable JavaScript is stored inside HTML templates. The externally owned background package retains its own source format and published typings.
 

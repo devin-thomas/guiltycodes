@@ -1,3 +1,4 @@
+// search.json entries use one-letter keys to keep the index small: t title, g game, r release, s status, u URL, x search text.
 export type SearchEntry = {
   readonly t: string;
   readonly g: string;
