@@ -83,7 +83,7 @@ function statusBadge(status: Status): string {
 function levelMeter(level: EvidenceLevel | null): string {
   if (!level) return `<span class="lv lv-none" title="No evidence level recorded">&ndash;</span>`;
   const rank: number = Number(level[1]);
-  return `<span class="lv" title="${escapeHtml(level)}"><span class="segs" aria-hidden="true">${Array.from({ length: 7 }, (_: unknown, i: number): string => `<i${i <= rank ? ' class="on"' : ""}></i>`).join("")}</span><b>${escapeHtml(level)}</b></span>`;
+  return `<span class="lv" title="${escapeHtml(level)}"><span class="segs" aria-hidden="true">${Array.from({ length: 7 }, (_: unknown, index: number): string => `<i${index <= rank ? ' class="on"' : ""}></i>`).join("")}</span><b>${escapeHtml(level)}</b></span>`;
 }
 
 function verifiedGauge(counts: Counts, total: number): string {
@@ -299,8 +299,8 @@ ${box("Status key", statusKey(shared))}`;
 
 function statusKey(shared: Shared): string {
   let keyMatch: RegExpMatchArray | null = shared.acDoc.match(/\*\*VERIFIED\*\*[\s\S]*?\*\*NOT TESTED\*\*\./);
-  const base: string = keyMatch ? inlineMarkdownHtml(keyMatch[0].replace(/\n/g, " ")) : "";
-  return `<p>${base} <b class="st st-superseded">SUPERSEDED</b> marks a code replaced by a corrected version. It stays listed.</p>`;
+  const keyText: string = keyMatch ? inlineMarkdownHtml(keyMatch[0].replace(/\n/g, " ")) : "";
+  return `<p>${keyText} <b class="st st-superseded">SUPERSEDED</b> marks a code replaced by a corrected version. It stays listed.</p>`;
 }
 
 export function gamesIndex(site: Site): string {

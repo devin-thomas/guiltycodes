@@ -106,7 +106,7 @@ function tableToText(html: string): string {
   if (isKeyValue) return `\n\n${rows.map((row: string[]): string => `${row[0] ?? ""}: ${row[1] ?? ""}`).join("\n")}\n\n`;
   const width: number = Math.max(...rows.map((row: string[]): number => row.length));
   function pipeRow(row: string[]): string {
-    return `| ${Array.from({ length: width }, (_: unknown, i: number): string => row[i] ?? "").join(" | ")} |`;
+    return `| ${Array.from({ length: width }, (_: unknown, index: number): string => row[index] ?? "").join(" | ")} |`;
   }
   let head: string[] = rows[0] ?? [];
   let body: string[][] = rows.slice(1);
@@ -181,16 +181,17 @@ export function htmlToText(html: string, origin: string, page: string): string {
     .replace(/^- *$/gm, "")
     .replace(/\n{3,}/g, "\n\n");
   // Restore held blocks last so code keeps its exact whitespace.
-  for (let i: number = heldBlocks.length - 1; i >= 0; i--) text = text.split(`\u0000${i}\u0000`).join(heldBlocks[i] ?? "");
+  for (let index: number = heldBlocks.length - 1; index >= 0; index--)
+    text = text.split(`\u0000${index}\u0000`).join(heldBlocks[index] ?? "");
   return text.replace(/\n{3,}/g, "\n\n").trim();
 }
 
-function htmlFiles(dir: string, base: string = dir): string[] {
+function htmlFiles(directory: string, root: string = directory): string[] {
   let files: string[] = [];
-  for (let entry of fs.readdirSync(dir, { withFileTypes: true })) {
-    const fullPath: string = path.join(dir, entry.name);
-    if (entry.isDirectory()) files.push(...htmlFiles(fullPath, base));
-    else if (entry.name.endsWith(".html")) files.push(path.relative(base, fullPath).split(path.sep).join("/"));
+  for (let entry of fs.readdirSync(directory, { withFileTypes: true })) {
+    const fullPath: string = path.join(directory, entry.name);
+    if (entry.isDirectory()) files.push(...htmlFiles(fullPath, root));
+    else if (entry.name.endsWith(".html")) files.push(path.relative(root, fullPath).split(path.sep).join("/"));
   }
   return files;
 }
@@ -282,11 +283,11 @@ export function splitParts(pages: readonly PreloadPage[], options: PreloadOption
       }
     }
     const label: string = shortTitle(group[0]?.title ?? key, options.name);
-    pieces.forEach((piece: PreloadPage[], i: number): void => {
+    pieces.forEach((piece: PreloadPage[], index: number): void => {
       const isSplit: boolean = pieces.length > 1;
       chunks.push({
-        label: isSplit ? `${label}, section ${i + 1} of ${pieces.length}` : label,
-        slug: isSplit ? `${slugOf(key)}-${i + 1}` : slugOf(key),
+        label: isSplit ? `${label}, section ${index + 1} of ${pieces.length}` : label,
+        slug: isSplit ? `${slugOf(key)}-${index + 1}` : slugOf(key),
         pages: piece,
         size: piece.reduce((total: number, page: PreloadPage): number => total + pageText(page, options.origin).length, 0),
         isSplit,
@@ -305,10 +306,10 @@ export function splitParts(pages: readonly PreloadPage[], options: PreloadOption
       };
     } else merged.push(chunk);
   }
-  return merged.map((chunk: Chunk, i: number): PreloadPart => {
-    const header: string = `${options.name}: preload for agents, part ${i + 1} of ${merged.length}\n${chunk.label}\nIndex: ${options.origin}${PRELOAD_ROUTE}\nPages in this part: ${chunk.pages.length}\n\n`;
+  return merged.map((chunk: Chunk, index: number): PreloadPart => {
+    const header: string = `${options.name}: preload for agents, part ${index + 1} of ${merged.length}\n${chunk.label}\nIndex: ${options.origin}${PRELOAD_ROUTE}\nPages in this part: ${chunk.pages.length}\n\n`;
     return {
-      file: `${String(i + 1).padStart(2, "0")}-${chunk.slug}.txt`,
+      file: `${String(index + 1).padStart(2, "0")}-${chunk.slug}.txt`,
       title: chunk.label,
       pages: chunk.pages,
       text: header + chunk.pages.map((page: PreloadPage): string => pageText(page, options.origin)).join("\n"),
@@ -326,18 +327,18 @@ function formatSize(chars: number): string {
 }
 
 function preloadPage(options: PreloadOptions, pages: readonly PreloadPage[], parts: readonly PreloadPart[], all: string): string {
-  const base: string = `${options.origin}${PRELOAD_ROUTE}`;
+  const preloadUrl: string = `${options.origin}${PRELOAD_ROUTE}`;
   const isInline: boolean = all.length <= options.inlineBudget;
   const partRows: string = parts
     .map(
-      (part: PreloadPart, i: number): string =>
-        `<li><a href="${base}/${part.file}">Part ${i + 1}: ${escapeHtml(part.title)}</a> (${part.pages.length} pages, ${formatSize(part.text.length)})</li>`,
+      (part: PreloadPart, index: number): string =>
+        `<li><a href="${preloadUrl}/${part.file}">Part ${index + 1}: ${escapeHtml(part.title)}</a> (${part.pages.length} pages, ${formatSize(part.text.length)})</li>`,
     )
     .join("\n");
   const index: string = parts
     .map(
-      (part: PreloadPart, i: number): string =>
-        `<h3>Part ${i + 1}</h3>\n<ul>\n${part.pages.map((page: PreloadPage): string => `<li><a href="${options.origin}${page.url}">${escapeHtml(page.title)}</a></li>`).join("\n")}\n</ul>`,
+      (part: PreloadPart, index: number): string =>
+        `<h3>Part ${index + 1}</h3>\n<ul>\n${part.pages.map((page: PreloadPage): string => `<li><a href="${options.origin}${page.url}">${escapeHtml(page.title)}</a></li>`).join("\n")}\n</ul>`,
     )
     .join("\n");
   return `<!doctype html>
@@ -347,8 +348,8 @@ function preloadPage(options: PreloadOptions, pages: readonly PreloadPage[], par
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${escapeHtml(options.name)}: preload for agents</title>
 <meta name="description" content="${escapeHtml(`Everything on ${options.name} as plain text for AI agents and readers without JavaScript.`)}">
-<link rel="canonical" href="${base}">
-<link rel="alternate" type="text/plain" href="${base}/all.txt">
+<link rel="canonical" href="${preloadUrl}">
+<link rel="alternate" type="text/plain" href="${preloadUrl}/all.txt">
 </head>
 <body>
 <main>
@@ -358,12 +359,12 @@ ${options.summary.map((paragraph: string): string => `<p>${escapeHtml(paragraph)
 <ul>
 <li>This page and the files it links are plain text and HTML with no JavaScript, no sign-in and no GitHub access needed.</li>
 <li>They are generated at build time from the site's own public pages, so they say exactly what ${escapeHtml(options.origin)} shows a visitor, and nothing more.</li>
-<li>${pages.length} pages, ${formatSize(all.length)} in total.${isInline ? " The full text of every page is included below." : ` Read the parts below in order, or fetch <a href="${base}/all.txt">all.txt</a> (every page in one file) if you can read a file that size.`}</li>
+<li>${pages.length} pages, ${formatSize(all.length)} in total.${isInline ? " The full text of every page is included below." : ` Read the parts below in order, or fetch <a href="${preloadUrl}/all.txt">all.txt</a> (every page in one file) if you can read a file that size.`}</li>
 <li>Each page in the text starts with its URL and title. Code blocks are copied exactly.</li>
 </ul>
 <h2>Full text</h2>
 <ul>
-<li><a href="${base}/all.txt">Every page in one file</a> (${formatSize(all.length)})</li>
+<li><a href="${preloadUrl}/all.txt">Every page in one file</a> (${formatSize(all.length)})</li>
 ${isInline ? "" : partRows}
 </ul>
 ${isInline ? `<pre style="white-space: pre-wrap">${escapeHtml(all)}</pre>` : `<h2>Page index</h2>\n${index}`}
@@ -374,28 +375,28 @@ ${isInline ? `<pre style="white-space: pre-wrap">${escapeHtml(all)}</pre>` : `<h
 }
 
 function llmsTxt(options: PreloadOptions, parts: readonly PreloadPart[], all: string): string {
-  const base: string = `${options.origin}${PRELOAD_ROUTE}`;
+  const preloadUrl: string = `${options.origin}${PRELOAD_ROUTE}`;
   return `# ${options.name}
 
 > ${options.summary[0] ?? ""}
 
-Start here: ${base} (an agent-readable overview with the full text of the site, no JavaScript needed).
+Start here: ${preloadUrl} (an agent-readable overview with the full text of the site, no JavaScript needed).
 
 ## Full text
 
-- [Every page in one file](${base}/all.txt): ${formatSize(all.length)}
-${parts.length > 1 ? parts.map((part: PreloadPart, i: number): string => `- [Part ${i + 1}: ${part.title}](${base}/${part.file}): ${formatSize(part.text.length)}`).join("\n") + "\n" : ""}`;
+- [Every page in one file](${preloadUrl}/all.txt): ${formatSize(all.length)}
+${parts.length > 1 ? parts.map((part: PreloadPart, index: number): string => `- [Part ${index + 1}: ${part.title}](${preloadUrl}/${part.file}): ${formatSize(part.text.length)}`).join("\n") + "\n" : ""}`;
 }
 
 export function writePreloadForAgents(options: PreloadOptions): PreloadResult {
   let pages: PreloadPage[] = readPages(options.dist, options.origin);
   let parts: PreloadPart[] = splitParts(pages, options);
   const all: string = `${options.name}: every page as plain text\nIndex: ${options.origin}${PRELOAD_ROUTE}\nPages: ${pages.length}\n\n${pages.map((page: PreloadPage): string => pageText(page, options.origin)).join("\n")}`;
-  const dir: string = path.join(options.dist, PRELOAD_ROUTE.slice(1));
-  fs.rmSync(dir, { recursive: true, force: true });
-  fs.mkdirSync(dir, { recursive: true });
-  fs.writeFileSync(path.join(dir, "all.txt"), all);
-  if (parts.length > 1) for (let part of parts) fs.writeFileSync(path.join(dir, part.file), part.text);
+  const outputDirectory: string = path.join(options.dist, PRELOAD_ROUTE.slice(1));
+  fs.rmSync(outputDirectory, { recursive: true, force: true });
+  fs.mkdirSync(outputDirectory, { recursive: true });
+  fs.writeFileSync(path.join(outputDirectory, "all.txt"), all);
+  if (parts.length > 1) for (let part of parts) fs.writeFileSync(path.join(outputDirectory, part.file), part.text);
   fs.writeFileSync(path.join(options.dist, `${PRELOAD_ROUTE.slice(1)}.html`), preloadPage(options, pages, parts, all));
   fs.writeFileSync(path.join(options.dist, "llms.txt"), llmsTxt(options, parts, all));
   return { pages: pages.length, parts: parts.length, chars: all.length };

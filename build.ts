@@ -89,8 +89,8 @@ for (let game of site.games) {
     let sorted: Code[] = [...release.codes].sort(
       (left: Code, right: Code): number => GROUP_ORDER.indexOf(left.group) - GROUP_ORDER.indexOf(right.group),
     );
-    sorted.forEach((code: Code, i: number): void => {
-      writePage(code.url, codePage(code, site, { previous: sorted[i - 1], next: sorted[i + 1] }));
+    sorted.forEach((code: Code, index: number): void => {
+      writePage(code.url, codePage(code, site, { previous: sorted[index - 1], next: sorted[index + 1] }));
       searchEntries.push({
         t: code.title,
         g: game.title,

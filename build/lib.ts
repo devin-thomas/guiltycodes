@@ -78,10 +78,10 @@ export function sectionBody(markdown: string, heading: string, { required = true
     return "";
   }
   let end: number = lines.length;
-  for (let i: number = start + 1; i < lines.length; i++) {
-    let headingMatch: RegExpMatchArray | null = requireValue(lines[i], "heading line").match(/^(#+)\s/);
+  for (let index: number = start + 1; index < lines.length; index++) {
+    let headingMatch: RegExpMatchArray | null = requireValue(lines[index], "heading line").match(/^(#+)\s/);
     if (headingMatch && requireValue(headingMatch[1], "heading prefix").length <= headingLevel) {
-      end = i;
+      end = index;
       break;
     }
   }
@@ -121,16 +121,19 @@ function splitRow(line: string): readonly string[] {
 export function parseTables(markdown: string): readonly Table[] {
   let lines: string[] = markdown.split(/\r?\n/);
   let tables: Table[] = [];
-  for (let i: number = 0; i < lines.length - 1; i++) {
-    if (/^\s*\|/.test(requireValue(lines[i], "table line")) && /^\s*\|[\s:|-]+\|\s*$/.test(requireValue(lines[i + 1], "table divider"))) {
-      let j: number = i + 2;
-      while (j < lines.length && /^\s*\|/.test(requireValue(lines[j], "table row"))) j++;
+  for (let index: number = 0; index < lines.length - 1; index++) {
+    if (
+      /^\s*\|/.test(requireValue(lines[index], "table line")) &&
+      /^\s*\|[\s:|-]+\|\s*$/.test(requireValue(lines[index + 1], "table divider"))
+    ) {
+      let rowEnd: number = index + 2;
+      while (rowEnd < lines.length && /^\s*\|/.test(requireValue(lines[rowEnd], "table row"))) rowEnd++;
       tables.push({
-        header: splitRow(requireValue(lines[i], "table header")),
-        rows: lines.slice(i + 2, j).map(splitRow),
-        text: lines.slice(i, j).join("\n"),
+        header: splitRow(requireValue(lines[index], "table header")),
+        rows: lines.slice(index + 2, rowEnd).map(splitRow),
+        text: lines.slice(index, rowEnd).join("\n"),
       });
-      i = j;
+      index = rowEnd;
     }
   }
   return tables;
@@ -157,13 +160,13 @@ function dropColumns(markdown: string, names: readonly string[]): string {
   let result: string = markdown;
   for (const table of parseTables(markdown)) {
     let dropped: number[] = table.header
-      .map((heading: string, i: number): number =>
-        names.some((name: string): boolean => heading.toLowerCase() === name.toLowerCase()) ? i : -1,
+      .map((heading: string, index: number): number =>
+        names.some((name: string): boolean => heading.toLowerCase() === name.toLowerCase()) ? index : -1,
       )
-      .filter((i: number): boolean => i >= 0);
+      .filter((index: number): boolean => index >= 0);
     if (!dropped.length) continue;
     function keptCells(cells: readonly string[]): readonly string[] {
-      return cells.filter((_: string, i: number): boolean => !dropped.includes(i));
+      return cells.filter((_: string, index: number): boolean => !dropped.includes(index));
     }
     result = result.replace(table.text, tableMarkdown(keptCells(table.header), table.rows.map(keptCells)));
   }
@@ -213,7 +216,7 @@ function publicMarkdown(markdown: string): string {
   let kept: string[] = [];
   for (const block of blocks) {
     if (/^\s*\|/.test(block)) {
-      let rows: string[] = block.split("\n").filter((line: string, i: number): boolean => i < 2 || !privatePattern.test(line));
+      let rows: string[] = block.split("\n").filter((line: string, index: number): boolean => index < 2 || !privatePattern.test(line));
       kept.push(rows.join("\n"));
     } else if (block.split("\n").some((line: string): boolean => privatePattern.test(line)) && !/^\s*[-*]\s/m.test(block)) {
       continue;
