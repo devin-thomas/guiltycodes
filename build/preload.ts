@@ -221,7 +221,13 @@ function slug(key: string): string {
   );
 }
 
-type Chunk = { label: string; slug: string; pages: PreloadPage[]; size: number; split: boolean };
+type Chunk = {
+  readonly label: string;
+  readonly slug: string;
+  readonly pages: readonly PreloadPage[];
+  readonly size: number;
+  readonly split: boolean;
+};
 
 // Pages grouped by URL prefix; small neighbouring groups share a part, and an oversized group splits at page boundaries.
 export function splitParts(pages: readonly PreloadPage[], options: PreloadOptions): PreloadPart[] {
@@ -234,36 +240,42 @@ export function splitParts(pages: readonly PreloadPage[], options: PreloadOption
   }
   let chunks: Chunk[] = [];
   for (let [key, group] of groups) {
-    const label: string = shortTitle(group[0]?.title ?? key, options.name);
-    let pieces: Chunk[] = [];
-    let current: Chunk = { label, slug: slug(key), pages: [], size: 0, split: false };
+    let pieces: PreloadPage[][] = [[]];
+    let size: number = 0;
     for (let page of group) {
-      const size: number = pageText(page, options.origin).length;
-      if (current.pages.length && current.size + size > options.partBudget) {
-        pieces.push(current);
-        current = { label, slug: slug(key), pages: [], size: 0, split: true };
+      const pageSize: number = pageText(page, options.origin).length;
+      let current: PreloadPage[] = pieces[pieces.length - 1] ?? [];
+      if (current.length && size + pageSize > options.partBudget) {
+        pieces.push([page]);
+        size = pageSize;
+      } else {
+        current.push(page);
+        size += pageSize;
       }
-      current.pages.push(page);
-      current.size += size;
     }
-    pieces.push(current);
-    if (pieces.length > 1) {
-      pieces.forEach((piece: Chunk, i: number): void => {
-        piece.split = true;
-        piece.label = `${label}, section ${i + 1} of ${pieces.length}`;
-        piece.slug = `${slug(key)}-${i + 1}`;
+    const label: string = shortTitle(group[0]?.title ?? key, options.name);
+    pieces.forEach((piece: PreloadPage[], i: number): void => {
+      const split: boolean = pieces.length > 1;
+      chunks.push({
+        label: split ? `${label}, section ${i + 1} of ${pieces.length}` : label,
+        slug: split ? `${slug(key)}-${i + 1}` : slug(key),
+        pages: piece,
+        size: piece.reduce((n: number, p: PreloadPage): number => n + pageText(p, options.origin).length, 0),
+        split,
       });
-    }
-    chunks.push(...pieces);
+    });
   }
   let merged: Chunk[] = [];
   for (let chunk of chunks) {
-    let last: Chunk | undefined = merged[merged.length - 1];
+    const last: Chunk | undefined = merged[merged.length - 1];
     if (last && !chunk.split && !last.split && last.size + chunk.size <= options.partBudget) {
-      last.pages.push(...chunk.pages);
-      last.size += chunk.size;
-      last.label = `${last.label}; ${chunk.label}`;
-    } else merged.push({ ...chunk, pages: [...chunk.pages] });
+      merged[merged.length - 1] = {
+        ...last,
+        label: `${last.label}; ${chunk.label}`,
+        pages: [...last.pages, ...chunk.pages],
+        size: last.size + chunk.size,
+      };
+    } else merged.push(chunk);
   }
   return merged.map((chunk: Chunk, i: number): PreloadPart => {
     const header: string = `${options.name}: preload for agents, part ${i + 1} of ${merged.length}\n${chunk.label}\nIndex: ${options.origin}${PRELOAD_ROUTE}\nPages in this part: ${chunk.pages.length}\n\n`;
