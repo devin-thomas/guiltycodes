@@ -10,67 +10,83 @@
   const KEY = "gc-mission-edits";
   const LAST = 25; // slots 26-30 unlock after 1-25 are cleared
 
-  // ---- evidence: v VERIFIED (run on Mission 1), i INFERRED (same mechanism), n NOT TESTED ----
+  // ---- evidence: the schema's proof level of each field and side, shown as the site's badges ----
+  // emulator -> VERIFIED; panel, code and emulator-ram -> INFERRED; unknown -> NOT TESTED
   const ST = { v: ["VERIFIED", "st-verified"], i: ["INFERRED", "st-inferred"], n: ["NOT TESTED", "st-not-tested"] };
-  const badge = (s, title) => `<span class="st ${ST[s][1]}"${title ? ` title="${esc(title)}"` : ""}>${ST[s][0]}</span>`;
-  const PROVEN = "Run on Mission 1: the enemy, the time and your start life.";
+  const LVL = { emulator: "v", "emulator-ram": "i", panel: "i", code: "i", unknown: "n" };
+  const LVLTXT = {
+    emulator: "Emulator-proven: changed by cheat and the effect seen in a fight.",
+    "emulator-ram": "Reached the game's data in a running fight; the effect itself was not seen.",
+    panel: "Matches the game's own info screen on every visible stock mission; the in-fight effect is the game's own rule.",
+    code: "Read from the game's code, not run.",
+    unknown: "The same in all 30 stock missions; its meaning is not known. Leave it alone.",
+  };
+  const badge = (lvl, title) => `<span class="st ${ST[LVL[lvl] || "n"][1]}" title="${esc(title || LVLTXT[lvl] || "")}">${ST[LVL[lvl] || "n"][0]}</span>`;
+  // status cell for a field: one badge when both sides agree, otherwise one per side
+  function status(k) {
+    const p = D.PROOF[k];
+    if (typeof p === "string") return badge(p);
+    if (!p) return badge("unknown");
+    if (p.player === p.enemy) return badge(p.player);
+    return `<span class="sides2"><span>You ${badge(p.player)}</span><span>Opp. ${badge(p.enemy)}</span></span>`;
+  }
 
-  // ---- field layout: one entry per field, grouped. t: num | sel | chk. ----
+  // ---- field layout: one entry per field, grouped. t: num | sel | chk. why: plain words; ev: what was seen. ----
   const CLEAR = ["Judge", "Beat the enemy", "Survive to time-up"];
   const SIDE_GROUPS = [
     ["Fighter", [
-      { k: "char", label: "Character", t: "sel", opts: "char", st: "v", why: "The fighter. On your side 0 means whoever you pick; the tested edit changes the opponent." },
-      { k: "sp", label: "Colour", t: "sel", opts: [[0, "Normal"], [1, "Gold"], [2, "Black"]], st: "i", why: "Normal, Gold or Black version." },
-      { k: "ex", label: "EX version", t: "chk", st: "i", why: "The EX version of the character." },
-      { k: "colour", label: "Palette", t: "num", st: "i", why: "Colour slot, used when Colour is Normal." },
+      { k: "char", label: "Character", t: "sel", opts: "char", why: "The fighter. On your side 0 means whoever you pick; forcing a fighter on your side is not tested.", ev: "Opponent seen in the fight: Ky, Potemkin, Order-Sol and others." },
+      { k: "sp", label: "Colour", t: "sel", opts: [[0, "Normal"], [1, "Gold"], [2, "Black"]], why: "Normal, Gold or Black version. The panel prints only the opponent's.", ev: "Gold Potemkin seen in the fight; Black and EX Black on the panel." },
+      { k: "ex", label: "EX version", t: "chk", why: "The EX version of the character. The panel prints only the opponent's.", ev: "EX Ky and EX Order-Sol seen on the panel and in the fight." },
+      { k: "colour", label: "Palette", t: "num", why: "Colour slot, used when Colour is Normal. 0 to 31." },
     ]],
     ["Life", [
-      { k: "life", label: "Start life", t: "num", st: "v", why: "Life at the start. 420 is a full bar. The tested edit changes yours." },
-      { k: "regain", label: "Regain", t: "num", st: "i", why: "Recoverable life (the :REGAIN tag). 1 is on." },
-      { k: "heal", label: "Heal", t: "num", st: "i", why: "Life regeneration (:HEAL). 1 is on." },
-      { k: "poison", label: "Poison", t: "num", st: "i", why: "Poison (:POISON). 1 is on." },
+      { k: "life", label: "Start life", t: "num", why: "Start life, 1 to 420 (420 is a full bar; 460 needs the life-460 cheat).", ev: "Your 210 and 105, the opponent's 30, and 460 with life-460 were seen in fights." },
+      { k: "regain", label: "Regain", t: "num", why: "Recoverable life (the :REGAIN tag). 1 is on." },
+      { k: "heal", label: "Heal", t: "num", why: "Life regeneration (:HEAL). 1 is on.", ev: "Your Heal reached the game's data in Ghost Survival." },
+      { k: "poison", label: "Poison", t: "num", why: "Life drains over time (:POISON), and the fighter turns pink. 1 is on.", ev: "Your Poison seen in Poison Sprint: pink, life falling without hits." },
     ]],
     ["Tension, guard and burst", [
-      { k: "tension_mode", label: "Tension", t: "sel", opts: [[0, "Normal"], [1, "None"], [2, "Hold"]], st: "i", why: "How Tension behaves: normal, none, or held." },
-      { k: "tension", label: "Start Tension", t: "num", step: 100, st: "i", why: "Tension at the start. 10000 is full." },
-      { k: "guard", label: "Guard level", t: "num", st: "i", why: "Guard level from -120 (weakest) to 128 (safest)." },
-      { k: "burst", label: "Psych Burst", t: "sel", opts: [[0, "None"], [1, "OK"], [2, "Infinite"]], st: "i", why: "Psych Burst: none, available, or unlimited." },
+      { k: "tension_mode", label: "Tension", t: "sel", opts: [[0, "Normal"], [1, "None"], [2, "Hold"]], why: "How Tension behaves: normal, no gain, or held at the start value.", ev: "Hold keeps the bar full: Poison Sprint (you), Ghost Survival (opponent)." },
+      { k: "tension", label: "Start Tension", t: "num", step: 100, why: "Tension at the start. 10000 is full." },
+      { k: "guard", label: "Guard level", t: "num", why: "Start Guard Level, -128 to 128. A negative one is weaker.", ev: "Prints as given on the panel, negatives included." },
+      { k: "burst", label: "Psych Burst", t: "sel", opts: [[0, "None"], [1, "OK"], [2, "Infinite"]], why: "Psych Burst: none, available, or unlimited.", ev: "Infinite seen on both gauges in Glass Cannon." },
     ]],
     ["Damage rules", [
-      { k: "no_normal", label: "No normal damage", t: "chk", st: "i", why: "Normal moves deal no damage." },
-      { k: "no_special", label: "No special damage", t: "chk", st: "i", why: "Special moves deal no damage." },
-      { k: "no_overdrive", label: "No Overdrive damage", t: "chk", st: "i", why: "Overdrives deal no damage." },
-      { k: "dead_angle", label: "Dead Angle damages", t: "chk", st: "i", why: "Dead Angle Attacks deal damage." },
-      { k: "combo_over", label: "Combo: only after hit N", t: "num", st: "i", why: "Only hits after the Nth hit of a combo count (COMBO DAMAGE OVER n)." },
-      { k: "combo_under", label: "Combo: first N hits only", t: "num", st: "i", why: "Only the first N hits of a combo count (UNDER n)." },
-      { k: "position", label: "Hits count", t: "sel", opts: [[0, "Anywhere"], [1, "To ground"], [2, "To air"]], st: "i", why: "Damage only counts against grounded or airborne targets." },
+      { k: "no_normal", label: "No normal damage", t: "chk", why: "This fighter's normal moves deal no damage." },
+      { k: "no_special", label: "No special damage", t: "chk", why: "This fighter's special moves deal no damage." },
+      { k: "no_overdrive", label: "No Overdrive damage", t: "chk", why: "This fighter's Overdrives deal no damage.", ev: "All three off on EX Ky in Glass Cannon: Sol kept his life." },
+      { k: "dead_angle", label: "Dead Angle damages", t: "chk", why: "This fighter's Dead Angle Attacks deal damage." },
+      { k: "combo_over", label: "Combo: only after hit N", t: "num", why: "Only hits after the Nth hit of a combo deal damage. 0 is off. If both combo fields are set, the panel prints only this one." },
+      { k: "combo_under", label: "Combo: first N hits only", t: "num", why: "Only the first N hits of a combo deal damage. 0 is off." },
+      { k: "position", label: "Hits count", t: "sel", opts: [[0, "Anywhere"], [1, "To ground"], [2, "To air"]], why: "This fighter only damages a grounded or an airborne target." },
     ]],
     ["Seals", [
-      { k: "seal_special", label: "Specials sealed", t: "chk", st: "i", why: "SEAL SPECIAL." },
-      { k: "seal_jump", label: "Jump sealed", t: "chk", st: "i", why: "SEAL JUMP." },
-      { k: "seal_guard", label: "Guard sealed", t: "chk", st: "i", why: "SEAL GUARD." },
-      { k: "no_ik", label: "Instant Kill sealed", t: "chk", st: "i", why: "Instant Kill cannot be used. The panel shows - instead of OK." },
+      { k: "seal_special", label: "Specials sealed", t: "chk", why: "Special moves cannot be used." },
+      { k: "seal_jump", label: "Jump sealed", t: "chk", why: "Cannot jump. The fighter turns purple when the seal acts.", ev: "Your jump seal seen in Glass Cannon." },
+      { k: "seal_guard", label: "Guard sealed", t: "chk", why: "Cannot block. The fighter turns purple.", ev: "Your guard seal seen in Ghost Survival." },
+      { k: "no_ik", label: "Instant Kill sealed", t: "chk", why: "Instant Kill cannot be used. The panel shows - instead of OK." },
     ]],
     ["Other", [
-      { k: "invisible", label: "Invisible", t: "chk", st: "i", why: "The fighter is invisible (Mission 21 uses it for Chipp)." },
-      { k: "gimmick", label: "Character gimmick", t: "num", st: "i", why: "Per-character state (Eddie, Zappa and Testament use it)." },
+      { k: "invisible", label: "Invisible", t: "chk", why: "The fighter fades. Only Chipp is known to respond (Mission 21).", ev: "Set on EX Order-Sol it reached the game's data but he stayed visible." },
+      { k: "gimmick", label: "Character gimmick", t: "num", why: "Per-character state, 0 or 1 (Eddie, Zappa and Testament use 1). What it does depends on the character." },
     ]],
     ["Unknown, keep stock", [
-      { k: "x08", label: "x08", t: "num", st: "n", why: "Unknown. 0 in every mission." },
-      { k: "x30", label: "x30", t: "num", st: "n", why: "Unknown. 0 in every mission." },
+      { k: "x08", label: "x08", t: "num", why: "Unknown. 0 in every mission." },
+      { k: "x30", label: "x30", t: "num", why: "Unknown. 0 in every mission." },
     ]],
   ];
   const RULES = [
-    { k: "clear", label: "Clear condition", t: "seg", st: "i", why: "How the mission is won: Judge (most life at time-up), Beat the enemy, or Survive until time-up." },
-    { k: "time", label: "Time", t: "time", st: "v", why: "Seconds. Infinity removes the timer. The tested edit changes it." },
-    { k: "stage", label: "Stage", t: "sel", opts: "stage", st: "n", why: "Stage id. -1 uses the opponent's stage. Names are not checked yet." },
-    { k: "bgm", label: "Music", t: "sel", opts: "bgm", st: "n", why: "Music id. 0 uses the opponent's theme. Names are not checked yet." },
+    { k: "clear", label: "Clear condition", t: "seg", why: "How the mission is won: Judge (most life at time-up, or a KO), Beat the enemy (KO), or Survive until time-up.", ev: "Judge cleared by a KO and Survive cleared at time-up, both on custom slots." },
+    { k: "time", label: "Time", t: "time", why: "Seconds, 1 to 99. Infinity removes the timer.", ev: "20, 30 and 77 seconds seen." },
+    { k: "stage", label: "Stage", t: "sel", opts: "stage", why: "Stage id, -1 (the opponent's stage) or 0 to 40. Overriding the stage is not tested, and the names are not known." },
+    { k: "bgm", label: "Music", t: "sel", opts: "bgm", why: "Music id, 0 (the opponent's theme) to 40. Not tested; the names are not known." },
   ];
   const UNKNOWN_COMMON = [
-    { k: "x52", label: "x52", t: "num", st: "n", why: "Unknown. -1 in every mission." },
-    { k: "x58", label: "x58", t: "num", st: "n", why: "Unknown. 1 in every mission." },
-    { k: "cpu_off", label: "cpu_off", t: "num", st: "n", why: "0 in every mission. Nonzero is thought to stop the CPU from fighting." },
-    { k: "x7a", label: "x7a", t: "num", st: "n", why: "Unknown flag. 0 in Missions 1, 4, 6, 9, 11 and 18; 1 elsewhere." },
+    { k: "x52", label: "x52", t: "num", why: "Unknown. -1 in every mission." },
+    { k: "x58", label: "x58", t: "num", why: "Unknown. 1 in every mission." },
+    { k: "cpu_off", label: "cpu_off", t: "num", why: "0 in every mission. Nonzero should switch the opponent's AI off; not tested." },
+    { k: "x7a", label: "x7a", t: "num", why: "Unknown flag. 0 in Missions 1, 4, 6, 9, 11 and 18; 1 elsewhere." },
   ];
   const SPEC = {};
   for (const [, rows] of SIDE_GROUPS) for (const f of rows) SPEC[f.k] = f;
@@ -168,70 +184,35 @@
     }).join("");
     // rules
     $("#rulebody").innerHTML =
-      `<table class="kv rules">${RULES.map((f) => `<tr><th><span>${esc(f.label)}</span></th><td data-cell="c.${f.k}">${control(f, "c")}${reset("c", f.k)} <span class="why">${badge(f.st, f.st === "v" ? PROVEN : "")} ${esc(f.why)}</span></td></tr>`).join("")}</table>` +
-      `<details class="adv"><summary>Unknown fields, leave alone</summary><table class="kv rules">${UNKNOWN_COMMON.map((f) => `<tr><th><span>${esc(f.label)}</span></th><td data-cell="c.${f.k}">${control(f, "c")}${reset("c", f.k)} <span class="why">${badge(f.st)} ${esc(f.why)}</span></td></tr>`).join("")}</table></details>`;
+      `<table class="kv rules">${RULES.map((f) => `<tr><th><span>${esc(f.label)}</span></th><td data-cell="c.${f.k}">${control(f, "c")}${reset("c", f.k)} <span class="why">${status(f.k)} ${esc(f.why)}${f.ev ? ` <small>Seen: ${esc(f.ev)}</small>` : ""}</span></td></tr>`).join("")}</table>` +
+      `<details class="adv"><summary>Unknown fields, leave alone</summary><table class="kv rules">${UNKNOWN_COMMON.map((f) => `<tr><th><span>${esc(f.label)}</span></th><td data-cell="c.${f.k}">${control(f, "c")}${reset("c", f.k)} <span class="why">${status(f.k)} ${esc(f.why)}</span></td></tr>`).join("")}</table></details>`;
     // fighters
     $("#ftable tbody").innerHTML = SIDE_GROUPS.map(
       ([g, rows]) =>
         `<tr class="grp"><td colspan="4">${esc(g)}</td></tr>` +
-        rows.map((f) => `<tr><th scope="row" title="${esc(f.why)}">${esc(f.label)}</th>${cell(f, "p")}${cell(f, "e")}<td class="hide-sm">${badge(f.st, f.st === "v" ? PROVEN : "")}</td></tr>`).join(""),
+        rows.map((f) => `<tr><th scope="row" title="${esc(f.why)}">${esc(f.label)}</th>${cell(f, "p")}${cell(f, "e")}<td class="hide-sm">${status(f.k)}</td></tr>`).join(""),
     ).join("");
     // examples
     $("#extable tbody").innerHTML = D.EXAMPLES.map(
-      (x, i) => `<tr><td>${esc(x.name)}</td><td class="num">${x.slot}</td><td>${x.proven ? badge("v", "The tested Mission 1 demo file.") : badge("n", "A placeholder; not run yet.")}</td><td><button type="button" data-ex="${i}">Load</button></td></tr>`,
+      (x, i) => `<tr><td><b>${esc(x.name)}</b><br><small>${esc(x.note || "")}</small></td><td class="num">${x.slot}</td><td>${x.proven ? badge("emulator", "Run in the emulator: the panel, the fight and, for the custom missions, a cleared mission.") : badge("unknown", "Not run yet.")}</td><td><button type="button" data-ex="${i}">Load</button></td></tr>`,
     ).join("");
     // field table
     $("#fieldtable tbody").innerHTML = D.FIELDS.map((f) => {
-      const s = SPEC[f.key] || { label: f.key, why: "", st: "n" };
+      const s = SPEC[f.key] || { why: "" };
       const off = (n) => "+0x" + n.toString(16).toUpperCase().padStart(2, "0");
-      return `<tr><td><code>${esc(f.key)}</code></td><td>${esc(s.why)}</td><td class="num">${f.e == null ? off(f.p) : `${off(f.p)} / ${off(f.e)}`}</td><td>${badge(s.st, s.st === "v" ? PROVEN : "")}</td></tr>`;
+      const L = D.LIMITS[f.key];
+      return `<tr><td><code>${esc(f.key)}</code></td><td>${esc(s.why)}${s.ev ? ` <small>Seen: ${esc(s.ev)}</small>` : ""}</td><td class="num">${L ? `${L[0]} to ${L[1]}` : ""}</td><td class="num">${f.e == null ? off(f.p) : `${off(f.p)} / ${off(f.e)}`}</td><td>${status(f.key)}</td></tr>`;
     }).join("");
   }
 
-  // ---- panel readout: what the game's info screen should print for the current values ----
+  // ---- panel readout: what the game's info screen prints for the current values (rules from 25 shots of the real panel) ----
   function readout(m) {
-    const g = (s, k) => val(m, s, k);
-    const t = g("c", "time");
-    const tag = (s) => {
-      const x = g(s, "sp");
-      return `${g(s, "ex") ? ":EX" : ""}${x === 1 ? ":GOLD" : x === 2 ? ":BLACK" : ""}`;
-    };
-    const top = [
-      ["TIME", t < 0 ? "INFINITY" : String(Math.min(t, 99))],
-      ["CLEAR", ["JUDGE", "BEAT ENEMY", "TIME UP"][g("c", "clear")] || "?"],
-      ["ENEMY", cname(g("e", "char")).toUpperCase() + tag("e")],
-    ];
-    const seals = (s) => {
-      const l = [g(s, "seal_special") && "SPECIAL", g(s, "seal_jump") && "JUMP", g(s, "seal_guard") && "GUARD"].filter(Boolean);
-      return l.length ? l.join(" ") : "-";
-    };
-    const dmg = (s) => {
-      const un = [!g(s, "no_normal") && "NORMAL", !g(s, "no_special") && "SPECIAL", !g(s, "no_overdrive") && "OVERDRIVE"].filter(Boolean);
-      const da = g(s, "dead_angle");
-      let out;
-      if (!un.length && !da) out = "NONE";
-      else if (un.length === 3 && da) out = "ALL";
-      else out = [...un, da && "DEAD ANGLE"].filter(Boolean).join(" ");
-      const pos = g(s, "position");
-      return out + (pos === 1 ? " TO GROUND" : pos === 2 ? " TO AIR" : "");
-    };
-    const combo = (s) => {
-      const l = [g(s, "combo_over") > 0 && `OVER ${g(s, "combo_over")}`, g(s, "combo_under") > 0 && `UNDER ${g(s, "combo_under")}`].filter(Boolean);
-      return l.length ? l.join(" ") : "-";
-    };
-    const rows = [
-      ["LIFE", (s) => `${g(s, "life")}${g(s, "regain") ? ":REGAIN" : ""}${g(s, "heal") ? ":HEAL" : ""}${g(s, "poison") ? ":POISON" : ""}`],
-      ["GUARD LEVEL", (s) => String(g(s, "guard"))],
-      ["TENSION", (s) => `${g(s, "tension")}:${["NORMAL", "NO", "HOLD"][g(s, "tension_mode")] || "?"}`],
-      ["PSYCH BURST", (s) => ["-", "OK", "INFINITY"][g(s, "burst")] || "?"],
-      ["SEAL", seals],
-      ["COMBO DAMAGE", combo],
-      ["INSTANT KILL", (s) => (g(s, "no_ik") ? "-" : "OK")],
-      ["DAMAGE", dmg],
-    ];
-    return `<h3 class="sh">Info screen readout</h3><table class="kv readout">${top.map(([a, b]) => `<tr><th>${a}</th><td>${esc(b)}</td></tr>`).join("")}</table>` +
-      `<div class="tablewrap"><table class="grid readout"><thead><tr><th></th><th>PLAYER</th><th>ENEMY</th></tr></thead><tbody>${rows.map(([a, f]) => `<tr><td>${a}</td><td>${esc(f("p"))}</td><td>${esc(f("e"))}</td></tr>`).join("")}</tbody></table></div>` +
-      `<p class="note"><small>${changedN(m) ? "Worked out from your values." : "The stock mission."} Wording follows the game's screen; the screenshot is always the stock disc.</small></p>`;
+    const r = D.panel((side, k) => val(m, side, k));
+    const long = (a) => a.some((l) => l.length > 16);
+    const cellOf = (a) => esc(a.join("\n")).replace(/\n/g, "<br>") + (long(a) ? ' <small title="The game draws long lines past their column and clips them at the panel edge.">runs long</small>' : "");
+    return `<h3 class="sh">Info screen readout</h3><table class="kv readout">${r.top.map(([a, b]) => `<tr><th>${a}</th><td>${esc(b)}</td></tr>`).join("")}</table>` +
+      `<div class="tablewrap"><table class="grid readout"><thead><tr><th></th><th>PLAYER</th><th>ENEMY</th></tr></thead><tbody>${r.rows.map(([a, p, e]) => `<tr><td>${a}</td><td>${cellOf(p)}</td><td>${cellOf(e)}</td></tr>`).join("")}</tbody></table></div>` +
+      `<p class="note"><small>${changedN(m) ? "Worked out from your values." : "The stock mission."} The game never prints your EX or colour. The screenshot is always the stock disc.</small></p>`;
   }
 
   const SHOTS = window.MISSION_SHOTS || { info: {}, fights: {} };
@@ -280,7 +261,7 @@
       td.classList.toggle("chg", ch);
       const b = $("button.rs", td);
       b.hidden = !ch;
-      if (ch) b.textContent = `reset (stock ${fmt(k, sv)})`;
+      b.textContent = ch ? `reset (stock ${fmt(k, sv)})` : "";
     }
     // slots
     for (const b of $$("#slots .slot")) {
@@ -292,7 +273,7 @@
     }
     $("#msread").innerHTML = readout(m);
     // output
-    const txt = D.encode(state.edits);
+    const txt = D.encodeOne(state.edits);
     const writes = txt ? txt.split("\n").filter((l) => l.indexOf("patch=") === 0).length : 0;
     const ms = Object.keys(state.edits).length;
     $("#pn").textContent = txt || "// No changes yet. Pick a mission and change a setting.\n";

@@ -39,10 +39,16 @@ def git(*args):
     except Exception:
         return 'unknown'
 
+sch = json.load(open(os.path.join(a.src, 'data', 'mission_schema.json'), encoding='utf-8'))
+keep = ('name', 'side', 'min', 'max', 'default', 'values', 'proven', 'proof_note')
+schema = {'proof_levels': sch['proof_levels'], 'fields': [{k: f[k] for k in keep if k in f} for f in sch['fields']]}
+vectors = json.load(open(os.path.join(a.src, 'tests', 'mission_vectors.json'), encoding='utf-8'))['vectors']
+ptests = json.load(open(os.path.join(a.src, 'tests', 'panel', 'panel-tests.json'), encoding='utf-8'))['tests']
+
 out = {
     'source': {'repo': 'retro-graphics-research (mission-research)', 'branch': git('rev-parse', '--abbrev-ref', 'HEAD'),
-               'commit': git('rev-parse', '--short', 'HEAD'), 'files': ['tools/missions.py FIELDS', 'data/missions_us.csv']},
-    'stock': stock, 'fields': fields,
+               'commit': git('rev-parse', '--short', 'HEAD'), 'files': ['tools/missions.py FIELDS', 'data/missions_us.csv', 'data/mission_schema.json', 'tests/mission_vectors.json', 'tests/panel/panel-tests.json']},
+    'stock': stock, 'fields': fields, 'schema': schema, 'vectors': vectors, 'panel_tests': ptests,
 }
 os.makedirs(os.path.dirname(os.path.abspath(a.out)), exist_ok=True)
 with open(a.out, 'w', encoding='utf-8', newline='\n') as f:

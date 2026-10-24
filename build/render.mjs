@@ -503,7 +503,7 @@ export function missionPage(r, site, ctx) {
     ? box("Mission mode in the game", `<p>From the title screen to a cleared mission, on the US disc. The clear screens come from custom missions, so the captions say which slot.</p><div class="shots">${ctx.ui.map((u) => fig(`ui/${u.file}`, esc(u.caption), `PS2 Accent Core Plus: ${u.scene || u.caption}`, u.width, u.height)).join("")}</div>`, "where")
     : "";
   const body = `${relHeader(r, "mission-editor/")}
-<div class="warn"><b>Beta.</b> The field layout and the stock values are read from the game, and three edits are tested: Mission 1's enemy, time and your start life. Stage and music names and the allowed ranges are not checked yet, so some values may do nothing or break a fight. Keep a memory card backup and treat every code on this page as <span class="st st-inferred">INFERRED</span> unless the field table says VERIFIED.</div>
+<div class="warn"><b>Beta.</b> Field names, limits and stock values come from a checked schema, and the examples below were run whole in PCSX2. Individual fields are only as sure as the badge beside them: <span class="st st-verified">VERIFIED</span> was seen in a fight, <span class="st st-inferred">INFERRED</span> matches the game's info screen or its code, <span class="st st-not-tested">NOT TESTED</span> is unknown. Keep a memory card backup; a bad value can break a fight.</div>
 <noscript><div class="warn danger">The editor needs JavaScript. The finished codes for this release are on the <a href="${r.url}">Codes</a> tab.</div></noscript>
 <div id="med">
 ${box(
@@ -519,16 +519,21 @@ ${box(
   "4. Your code",
   `<div class="boxcopy"><button class="copy" type="button" data-target="pn">Copy</button><pre class="code" id="pn" tabindex="0" aria-live="polite"></pre></div>
 <p class="dl"><a class="dlbtn" id="pndl" href="#" download="${esc(r.serial)}_${esc(r.crc)}.mission-editor.pnach">Download ${esc(r.serial)}_${esc(r.crc)}.mission-editor.pnach</a> <span class="shown" id="pnmeta"></span> <button type="button" id="clearall">Clear all changes</button></p>
-<div class="prose"><h3>Use it in PCSX2</h3><ol><li>Save the download in PCSX2's <code>cheats</code> folder, next to <code>${esc(r.serial)}_${esc(r.crc)}.pnach</code> if you have it (the <a href="/downloads/">Downloads</a> file). PCSX2 loads every <code>${esc(r.serial)}_${esc(r.crc)}*.pnach</code> file there, so the two do not clash. If you copy the text instead, save it as <code>${esc(r.serial)}_${esc(r.crc)}.mission-editor.pnach</code>.</li><li>Turn cheats on and tick the <code>Mission</code> cheats you want (see <a href="/how-to/">How to use</a>), then boot the disc.</li><li>Open Mission mode and pick the slot you edited. The info screen shows the new values before you start.</li></ol></div>`,
+<div class="prose"><h3>Use it in PCSX2</h3><ol><li>Save the download in PCSX2's <code>cheats</code> folder, next to <code>${esc(r.serial)}_${esc(r.crc)}.pnach</code> if you have it (the <a href="/downloads/">Downloads</a> file). PCSX2 loads every <code>${esc(r.serial)}_${esc(r.crc)}*.pnach</code> file there, so the two do not clash. If you copy the text instead, save it as <code>${esc(r.serial)}_${esc(r.crc)}.mission-editor.pnach</code>.</li><li>Turn cheats on and tick the <code>Mission Editor</code> cheat (see <a href="/how-to/">How to use</a>), then boot the disc.</li><li>Check PCSX2's log for <code>N cheat patches are active</code>. N should match the cheats you ticked. If it is lower, PCSX2 dropped one and the mission will look stock; this editor writes a single cheat for that reason.</li><li>Open Mission mode and pick the slot you edited. The info screen shows the new values before you start.</li></ol></div>`,
   "code",
 )}
 ${box(
   "Examples",
-  `<div class="tablewrap"><table class="grid" id="extable"><thead><tr><th>Example</th><th class="num">Mission</th><th>Status</th><th></th></tr></thead><tbody></tbody></table></div>`,
+  `<p>Four missions that were run in PCSX2. The three custom ones replace the whole slot, so every field is set. Loading one replaces your edits to that slot.</p><div class="tablewrap"><table class="grid" id="extable"><thead><tr><th>Example</th><th class="num">Mission</th><th>Status</th><th></th></tr></thead><tbody></tbody></table></div>`,
   "examples",
 )}
 ${proof}${ui}
-<details class="box" id="fieldstatus"><summary><span>Field table</span></summary><div class="boxin"><p>What each field does and how far it is checked. Statuses follow the <a href="/">site key</a>: VERIFIED was seen in a test run, INFERRED shares the mechanism of a verified field, NOT TESTED was not run.</p><div class="tablewrap"><table class="grid" id="fieldtable"><thead><tr><th>Field</th><th>What it does</th><th class="num">Offset</th><th>Status</th></tr></thead><tbody></tbody></table></div></div></details>
+${box(
+  "Limits",
+  `<ul><li>The US version has no per-mission title or briefing text; the Japanese titles in the data are never shown, so you cannot name or describe a mission.</li><li>The Invisible flag only affects Chipp. Set on anyone else it did nothing in the one test.</li><li>The Stage override, CPU off and forcing your own character are not tested. They may do nothing.</li><li>Start life above 420 needs the life-460 cheat. Stage and music names are not known, only their ids.</li></ul>`,
+  "limits",
+)}
+<details class="box" id="fieldstatus"><summary><span>Field table</span></summary><div class="boxin"><p>What each field does, what was seen, and how far it is checked. Statuses follow the <a href="/">site key</a>: VERIFIED was seen in a test run, INFERRED is backed by the info screen or the game\'s code, NOT TESTED is unknown. Where the two fighters differ, each side has its own badge.</p><div class="tablewrap"><table class="grid" id="fieldtable"><thead><tr><th>Field</th><th>What it does</th><th class="num">Range</th><th class="num">Offset</th><th>Status</th></tr></thead><tbody></tbody></table></div></div></details>
 ${box(
   "About this page",
   `<p>Mission records are 30 blocks of 0x80 bytes in the game's data at <code>0x302BE0</code>, every field a signed 16-bit value. The stock values are decoded from the US disc and match the game's own info screen for Missions 1 to 25. Slots 26 to 30 appear in the game only after Missions 1 to 25 are cleared; their screenshots were taken after unlocking them on a throwaway card.</p>

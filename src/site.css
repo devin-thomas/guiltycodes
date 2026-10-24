@@ -353,3 +353,7 @@ details.box > .boxin { border-top: 0; }
 }
 .fightshot { margin-top: 8px; }
 .shots { align-items: start; }
+.sides2 { display: flex; flex-direction: column; gap: 3px; }
+.sides2 > span { display: flex; gap: 5px; align-items: center; white-space: nowrap; font-size: 10px; color: var(--muted); }
+table.readout td small { color: var(--warn); }
+.rs[hidden], .slot .dot[hidden] { display: none !important; }

@@ -95,7 +95,7 @@ fs.copyFileSync("src/site.css", path.join(A, "site.css"));
 fs.copyFileSync("src/site.js", path.join(A, "site.js"));
 fs.copyFileSync("src/mission-data.js", path.join(A, "mission-data.js"));
 fs.copyFileSync("src/mission-editor.js", path.join(A, "mission-editor.js"));
-fs.writeFileSync(path.join(A, "mission-stock.js"), `window.MISSION_RAW=${JSON.stringify({ STOCK: missionData.stock, FIELDS: missionData.fields })};
+fs.writeFileSync(path.join(A, "mission-stock.js"), `window.MISSION_RAW=${JSON.stringify({ STOCK: missionData.stock, FIELDS: missionData.fields, SCHEMA: missionData.schema })};
 `);
 fs.writeFileSync(path.join(A, "mission-shots.js"), `window.MISSION_SHOTS=${JSON.stringify({ info: missionShots.info, fights: missionShots.fights })};
 `);

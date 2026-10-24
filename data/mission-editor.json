@@ -2,10 +2,13 @@
  "source": {
   "repo": "retro-graphics-research (mission-research)",
   "branch": "mission-research",
-  "commit": "f8d4de3",
+  "commit": "22eef3d",
   "files": [
    "tools/missions.py FIELDS",
-   "data/missions_us.csv"
+   "data/missions_us.csv",
+   "data/mission_schema.json",
+   "tests/mission_vectors.json",
+   "tests/panel/panel-tests.json"
   ]
  },
  "stock": [
@@ -2380,6 +2383,1172 @@
    "p": 122,
    "e": null,
    "note": "unknown common flag (-> +0x86); 0 in missions 1, 4, 6, 9, 11, 18"
+  }
+ ],
+ "schema": {
+  "proof_levels": {
+   "emulator": "edited by pnach and the effect seen in the fight (screenshot and/or a RAM read of the end state)",
+   "panel": "decoded value matches the game's own info panel on all 25 visible stock missions; the in-fight effect is the game's own rule, not separately tested unless noted",
+   "emulator-ram": "value set by pnach reached the MI struct in a running fight (save-state read); the in-fight effect was not separately observed",
+   "code": "read from code (MissionLoad, MI readers), not run",
+   "unknown": "constant in all 30 stock records; meaning not established. Keep the stock value."
+  },
+  "fields": [
+   {
+    "name": "char",
+    "side": "pair",
+    "min": 0,
+    "max": 25,
+    "default": {
+     "player": 0,
+     "enemy": 1
+    },
+    "values": {
+     "0": "ANY",
+     "1": "SOL",
+     "2": "KY",
+     "3": "MAY",
+     "4": "MILLIA",
+     "5": "AXL",
+     "6": "POTEMKIN",
+     "7": "CHIPP",
+     "8": "EDDIE",
+     "9": "BAIKEN",
+     "10": "FAUST",
+     "11": "TESTAMENT",
+     "12": "JAM",
+     "13": "ANJI",
+     "14": "JOHNNY",
+     "15": "VENOM",
+     "16": "DIZZY",
+     "17": "SLAYER",
+     "18": "I-NO",
+     "19": "ZAPPA",
+     "20": "BRIDGET",
+     "21": "ROBO-KY",
+     "22": "A.B.A",
+     "23": "ORDER-SOL",
+     "24": "KLIFF",
+     "25": "JUSTICE"
+    },
+    "proven": {
+     "player": "code",
+     "enemy": "emulator"
+    },
+    "proof_note": "enemy proven: Ky, Potemkin, Order-Sol and others in custom slots (panel ENEMY and the fight); a forced player id is not run"
+   },
+   {
+    "name": "colour",
+    "side": "pair",
+    "min": 0,
+    "max": 31,
+    "default": {
+     "player": 0,
+     "enemy": 0
+    },
+    "proven": {
+     "player": "code",
+     "enemy": "code"
+    }
+   },
+   {
+    "name": "x08",
+    "side": "pair",
+    "min": 0,
+    "max": 0,
+    "default": {
+     "player": 0,
+     "enemy": 0
+    },
+    "proven": {
+     "player": "unknown",
+     "enemy": "unknown"
+    }
+   },
+   {
+    "name": "ex",
+    "side": "pair",
+    "min": 0,
+    "max": 1,
+    "default": {
+     "player": 0,
+     "enemy": 0
+    },
+    "values": {
+     "0": "off",
+     "1": "on"
+    },
+    "proven": {
+     "player": "panel",
+     "enemy": "emulator"
+    },
+    "proof_note": "enemy EX: custom Glass Cannon (KY:EX) and Ghost Survival (ORDER-SOL:EX), panel and MI; the panel does not show player EX (panel test 24)"
+   },
+   {
+    "name": "sp",
+    "side": "pair",
+    "min": 0,
+    "max": 2,
+    "default": {
+     "player": 0,
+     "enemy": 0
+    },
+    "values": {
+     "0": "normal",
+     "1": "GOLD (colour 14)",
+     "2": "BLACK (colour 19)"
+    },
+    "proven": {
+     "player": "panel",
+     "enemy": "emulator"
+    },
+    "proof_note": "enemy GOLD seen in the fight (Poison Sprint, Potemkin); BLACK and EX:BLACK on the panel (panel tests 6-8); player sp is not printed"
+   },
+   {
+    "name": "regain",
+    "side": "pair",
+    "min": 0,
+    "max": 1,
+    "default": {
+     "player": 0,
+     "enemy": 0
+    },
+    "values": {
+     "0": "off",
+     "1": "on"
+    },
+    "proven": {
+     "player": "panel",
+     "enemy": "panel"
+    }
+   },
+   {
+    "name": "life",
+    "side": "pair",
+    "min": 1,
+    "max": 420,
+    "default": {
+     "player": 420,
+     "enemy": 420
+    },
+    "proven": {
+     "player": "emulator",
+     "enemy": "emulator"
+    },
+    "proof_note": "player 210 proven (fight HitPoint 210); 460/460 proven with life-460"
+   },
+   {
+    "name": "heal",
+    "side": "pair",
+    "min": 0,
+    "max": 1,
+    "default": {
+     "player": 0,
+     "enemy": 0
+    },
+    "values": {
+     "0": "off",
+     "1": "on"
+    },
+    "proven": {
+     "player": "emulator-ram",
+     "enemy": "panel"
+    },
+    "proof_note": "player HEAL reached MI in Ghost Survival"
+   },
+   {
+    "name": "poison",
+    "side": "pair",
+    "min": 0,
+    "max": 1,
+    "default": {
+     "player": 0,
+     "enemy": 0
+    },
+    "values": {
+     "0": "off",
+     "1": "on"
+    },
+    "proven": {
+     "player": "emulator",
+     "enemy": "panel"
+    },
+    "proof_note": "player poison: Poison Sprint, pink tint and life falling without hits; MI poison [1, 0]"
+   },
+   {
+    "name": "tension_mode",
+    "side": "pair",
+    "min": 0,
+    "max": 2,
+    "default": {
+     "player": 0,
+     "enemy": 0
+    },
+    "values": {
+     "0": "NORMAL",
+     "1": "NO (no gain)",
+     "2": "HOLD (fixed at the start value)"
+    },
+    "proven": {
+     "player": "emulator",
+     "enemy": "emulator"
+    },
+    "proof_note": "HOLD: Tension bar stays full in the fight (Poison Sprint player, Ghost Survival enemy); NO with 5000 shows \"5000:NO\" (panel test 14)"
+   },
+   {
+    "name": "tension",
+    "side": "pair",
+    "min": 0,
+    "max": 10000,
+    "default": {
+     "player": 0,
+     "enemy": 0
+    },
+    "proven": {
+     "player": "emulator",
+     "enemy": "emulator"
+    }
+   },
+   {
+    "name": "guard",
+    "side": "pair",
+    "min": -128,
+    "max": 128,
+    "default": {
+     "player": 0,
+     "enemy": 0
+    },
+    "proven": {
+     "player": "panel",
+     "enemy": "emulator-ram"
+    }
+   },
+   {
+    "name": "x30",
+    "side": "pair",
+    "min": 0,
+    "max": 0,
+    "default": {
+     "player": 0,
+     "enemy": 0
+    },
+    "proven": {
+     "player": "unknown",
+     "enemy": "unknown"
+    }
+   },
+   {
+    "name": "no_normal",
+    "side": "block",
+    "min": 0,
+    "max": 1,
+    "default": {
+     "player": 0,
+     "enemy": 0
+    },
+    "values": {
+     "0": "off",
+     "1": "on"
+    },
+    "proven": {
+     "player": "panel",
+     "enemy": "emulator"
+    }
+   },
+   {
+    "name": "no_special",
+    "side": "block",
+    "min": 0,
+    "max": 1,
+    "default": {
+     "player": 0,
+     "enemy": 0
+    },
+    "values": {
+     "0": "off",
+     "1": "on"
+    },
+    "proven": {
+     "player": "panel",
+     "enemy": "emulator"
+    }
+   },
+   {
+    "name": "no_overdrive",
+    "side": "block",
+    "min": 0,
+    "max": 1,
+    "default": {
+     "player": 0,
+     "enemy": 0
+    },
+    "values": {
+     "0": "off",
+     "1": "on"
+    },
+    "proven": {
+     "player": "panel",
+     "enemy": "emulator"
+    },
+    "proof_note": "enemy normals, specials and Overdrives off: Glass Cannon, Sol kept all 105 life while EX Ky attacked; MI damage block [1, 1, 1, 1]"
+   },
+   {
+    "name": "no_ik",
+    "side": "block",
+    "min": 0,
+    "max": 1,
+    "default": {
+     "player": 1,
+     "enemy": 1
+    },
+    "values": {
+     "0": "off",
+     "1": "on"
+    },
+    "proven": {
+     "player": "panel",
+     "enemy": "panel"
+    }
+   },
+   {
+    "name": "seal_special",
+    "side": "block",
+    "min": 0,
+    "max": 1,
+    "default": {
+     "player": 0,
+     "enemy": 0
+    },
+    "values": {
+     "0": "off",
+     "1": "on"
+    },
+    "proven": {
+     "player": "panel",
+     "enemy": "panel"
+    }
+   },
+   {
+    "name": "seal_jump",
+    "side": "block",
+    "min": 0,
+    "max": 1,
+    "default": {
+     "player": 0,
+     "enemy": 0
+    },
+    "values": {
+     "0": "off",
+     "1": "on"
+    },
+    "proven": {
+     "player": "emulator",
+     "enemy": "panel"
+    }
+   },
+   {
+    "name": "seal_guard",
+    "side": "block",
+    "min": 0,
+    "max": 1,
+    "default": {
+     "player": 0,
+     "enemy": 0
+    },
+    "values": {
+     "0": "off",
+     "1": "on"
+    },
+    "proven": {
+     "player": "emulator",
+     "enemy": "panel"
+    }
+   },
+   {
+    "name": "bgm",
+    "side": "common",
+    "min": 0,
+    "max": 40,
+    "default": 0,
+    "proven": "code"
+   },
+   {
+    "name": "x52",
+    "side": "common",
+    "min": -1,
+    "max": -1,
+    "default": -1,
+    "proven": "unknown"
+   },
+   {
+    "name": "stage",
+    "side": "common",
+    "min": -1,
+    "max": 40,
+    "default": -1,
+    "proven": "code"
+   },
+   {
+    "name": "time",
+    "side": "common",
+    "min": -1,
+    "max": 99,
+    "default": 99,
+    "proven": "emulator",
+    "proof_note": "20, 30 (fight) and 77 (panel) proven"
+   },
+   {
+    "name": "x58",
+    "side": "common",
+    "min": 1,
+    "max": 1,
+    "default": 1,
+    "proven": "unknown"
+   },
+   {
+    "name": "cpu_off",
+    "side": "common",
+    "min": 0,
+    "max": 1,
+    "default": 0,
+    "proven": "code"
+   },
+   {
+    "name": "clear",
+    "side": "common",
+    "min": 0,
+    "max": 2,
+    "default": 1,
+    "values": {
+     "0": "JUDGE (time-out with the life lead)",
+     "1": "BEAT ENEMY (KO)",
+     "2": "TIME UP (survive until time runs out)"
+    },
+    "proven": "emulator",
+    "proof_note": "TIME UP cleared by surviving 20 s (Ghost Survival); a JUDGE slot cleared by KO (Glass Cannon); both show CONGRATULATIONS and the clear picture of the slot"
+   },
+   {
+    "name": "burst",
+    "side": "pair",
+    "min": 0,
+    "max": 2,
+    "default": {
+     "player": 1,
+     "enemy": 1
+    },
+    "values": {
+     "0": "- (none)",
+     "1": "OK (normal)",
+     "2": "INFINITY"
+    },
+    "proven": {
+     "player": "emulator",
+     "enemy": "emulator"
+    },
+    "proof_note": "INFINITY: both BURST gauges show infinite in the fight (Glass Cannon)"
+   },
+   {
+    "name": "dead_angle",
+    "side": "pair",
+    "min": 0,
+    "max": 1,
+    "default": {
+     "player": 1,
+     "enemy": 1
+    },
+    "values": {
+     "0": "off",
+     "1": "on"
+    },
+    "proven": {
+     "player": "panel",
+     "enemy": "panel"
+    }
+   },
+   {
+    "name": "combo_over",
+    "side": "pair",
+    "min": 0,
+    "max": 99,
+    "default": {
+     "player": 0,
+     "enemy": 0
+    },
+    "proven": {
+     "player": "panel",
+     "enemy": "panel"
+    },
+    "proof_note": "OVER and UNDER on one side at once: the panel prints only OVER (panel test 21)"
+   },
+   {
+    "name": "combo_under",
+    "side": "pair",
+    "min": 0,
+    "max": 99,
+    "default": {
+     "player": 0,
+     "enemy": 0
+    },
+    "proven": {
+     "player": "panel",
+     "enemy": "panel"
+    }
+   },
+   {
+    "name": "position",
+    "side": "pair",
+    "min": 0,
+    "max": 2,
+    "default": {
+     "player": 0,
+     "enemy": 0
+    },
+    "values": {
+     "0": "anywhere",
+     "1": "TO GROUND",
+     "2": "TO AIR"
+    },
+    "proven": {
+     "player": "panel",
+     "enemy": "panel"
+    }
+   },
+   {
+    "name": "invisible",
+    "side": "pair",
+    "min": 0,
+    "max": 1,
+    "default": {
+     "player": 0,
+     "enemy": 0
+    },
+    "values": {
+     "0": "off",
+     "1": "on"
+    },
+    "proven": {
+     "player": "code",
+     "enemy": "emulator-ram"
+    },
+    "proof_note": "negative result: Ghost Survival, MI invisible [0, 1], no visible effect"
+   },
+   {
+    "name": "gimmick",
+    "side": "pair",
+    "min": 0,
+    "max": 1,
+    "default": {
+     "player": 0,
+     "enemy": 0
+    },
+    "proven": {
+     "player": "code",
+     "enemy": "code"
+    }
+   },
+   {
+    "name": "x7a",
+    "side": "common",
+    "min": 0,
+    "max": 1,
+    "default": 1,
+    "proven": "unknown"
+   }
+  ]
+ },
+ "vectors": [
+  {
+   "name": "mission 1 demo, stock base (byte-identical to the emulator-proven pnach/…mission1-demo.pnach)",
+   "input": {
+    "slot": 1,
+    "base": "stock",
+    "fields": {
+     "enemy": "KY",
+     "time": 30,
+     "p.life": 210
+    }
+   },
+   "expected": [
+    "patch=1,EE,10302BE2,extended,00000002",
+    "patch=1,EE,10302BF8,extended,000000D2",
+    "patch=1,EE,10302C36,extended,0000001E"
+   ]
+  },
+  {
+   "name": "stock base, one per-side field",
+   "input": {
+    "slot": 4,
+    "base": "stock",
+    "fields": {
+     "p.life": 115
+    }
+   },
+   "expected": [
+    "patch=1,EE,10302D78,extended,00000073"
+   ]
+  },
+  {
+   "name": "stock base, value equal to stock writes nothing",
+   "input": {
+    "slot": 1,
+    "base": "stock",
+    "fields": {
+     "time": 99
+    }
+   },
+   "expected": []
+  },
+  {
+   "name": "stock base, unprefixed per-side field writes both sides",
+   "input": {
+    "slot": 5,
+    "base": "stock",
+    "fields": {
+     "poison": 1
+    }
+   },
+   "expected": [
+    "patch=1,EE,10302E00,extended,00000001",
+    "patch=1,EE,10302E02,extended,00000001"
+   ]
+  },
+  {
+   "name": "stock base, panel words as values",
+   "input": {
+    "slot": 6,
+    "base": "stock",
+    "fields": {
+     "p.tension_mode": "HOLD",
+     "e.sp": "GOLD",
+     "clear": "TIME UP",
+     "time": "INFINITY",
+     "e.burst": "INFINITY"
+    }
+   },
+   "expected": [
+    "patch=1,EE,10302E72,extended,00000001",
+    "patch=1,EE,10302E84,extended,00000002",
+    "patch=1,EE,10302EB6,extended,0000FFFF",
+    "patch=1,EE,10302EBC,extended,00000002"
+   ]
+  },
+  {
+   "name": "stock base, block fields (damage and seal runs)",
+   "input": {
+    "slot": 9,
+    "base": "stock",
+    "fields": {
+     "e.no_special": 1,
+     "e.seal_jump": 1,
+     "p.seal_guard": 1
+    }
+   },
+   "expected": [
+    "patch=1,EE,1030301E,extended,00000001",
+    "patch=1,EE,10303028,extended,00000001",
+    "patch=1,EE,1030302C,extended,00000001"
+   ]
+  },
+  {
+   "name": "neutral base replaces all 62 field halfwords of slot 30",
+   "input": {
+    "slot": 30,
+    "fields": {
+     "enemy": "BAIKEN"
+    }
+   },
+   "expected": [
+    "patch=1,EE,10303A60,extended,00000000",
+    "patch=1,EE,10303A62,extended,00000009",
+    "patch=1,EE,10303A64,extended,00000000",
+    "patch=1,EE,10303A66,extended,00000000",
+    "patch=1,EE,10303A68,extended,00000000",
+    "patch=1,EE,10303A6A,extended,00000000",
+    "patch=1,EE,10303A6C,extended,00000000",
+    "patch=1,EE,10303A6E,extended,00000000",
+    "patch=1,EE,10303A70,extended,00000000",
+    "patch=1,EE,10303A72,extended,00000000",
+    "patch=1,EE,10303A74,extended,00000000",
+    "patch=1,EE,10303A76,extended,00000000",
+    "patch=1,EE,10303A78,extended,000001A4",
+    "patch=1,EE,10303A7A,extended,000001A4",
+    "patch=1,EE,10303A7C,extended,00000000",
+    "patch=1,EE,10303A7E,extended,00000000",
+    "patch=1,EE,10303A80,extended,00000000",
+    "patch=1,EE,10303A82,extended,00000000",
+    "patch=1,EE,10303A84,extended,00000000",
+    "patch=1,EE,10303A86,extended,00000000",
+    "patch=1,EE,10303A88,extended,00000000",
+    "patch=1,EE,10303A8A,extended,00000000",
+    "patch=1,EE,10303A8C,extended,00000000",
+    "patch=1,EE,10303A8E,extended,00000000",
+    "patch=1,EE,10303A90,extended,00000000",
+    "patch=1,EE,10303A92,extended,00000000",
+    "patch=1,EE,10303A94,extended,00000000",
+    "patch=1,EE,10303A96,extended,00000000",
+    "patch=1,EE,10303A98,extended,00000000",
+    "patch=1,EE,10303A9A,extended,00000001",
+    "patch=1,EE,10303A9C,extended,00000000",
+    "patch=1,EE,10303A9E,extended,00000000",
+    "patch=1,EE,10303AA0,extended,00000000",
+    "patch=1,EE,10303AA2,extended,00000001",
+    "patch=1,EE,10303AA4,extended,00000000",
+    "patch=1,EE,10303AA6,extended,00000000",
+    "patch=1,EE,10303AA8,extended,00000000",
+    "patch=1,EE,10303AAA,extended,00000000",
+    "patch=1,EE,10303AAC,extended,00000000",
+    "patch=1,EE,10303AAE,extended,00000000",
+    "patch=1,EE,10303AB0,extended,00000000",
+    "patch=1,EE,10303AB2,extended,0000FFFF",
+    "patch=1,EE,10303AB4,extended,0000FFFF",
+    "patch=1,EE,10303AB6,extended,00000063",
+    "patch=1,EE,10303AB8,extended,00000001",
+    "patch=1,EE,10303ABA,extended,00000000",
+    "patch=1,EE,10303ABC,extended,00000001",
+    "patch=1,EE,10303ABE,extended,00000001",
+    "patch=1,EE,10303AC0,extended,00000001",
+    "patch=1,EE,10303AC2,extended,00000001",
+    "patch=1,EE,10303AC4,extended,00000001",
+    "patch=1,EE,10303AC6,extended,00000000",
+    "patch=1,EE,10303AC8,extended,00000000",
+    "patch=1,EE,10303ACA,extended,00000000",
+    "patch=1,EE,10303ACC,extended,00000000",
+    "patch=1,EE,10303ACE,extended,00000000",
+    "patch=1,EE,10303AD0,extended,00000000",
+    "patch=1,EE,10303AD2,extended,00000000",
+    "patch=1,EE,10303AD4,extended,00000000",
+    "patch=1,EE,10303AD6,extended,00000000",
+    "patch=1,EE,10303AD8,extended,00000000",
+    "patch=1,EE,10303ADA,extended,00000001"
+   ]
+  },
+  {
+   "name": "negative value (guard level) as two's complement",
+   "input": {
+    "slot": 2,
+    "base": "stock",
+    "fields": {
+     "p.guard": -120
+    }
+   },
+   "expected": [
+    "patch=1,EE,10302C8C,extended,0000FF88"
+   ]
+  },
+  {
+   "name": "global panel text edit",
+   "input": {
+    "slot": 1,
+    "base": "stock",
+    "text": {
+     "START MISSION": "CUSTOM MISSION"
+    }
+   },
+   "expected": [
+    "patch=1,EE,204094E8,extended,54535543",
+    "patch=1,EE,204094EC,extended,4D204D4F",
+    "patch=1,EE,204094F0,extended,49535349",
+    "patch=1,EE,204094F4,extended,00004E4F"
+   ]
+  },
+  {
+   "name": "force allows life 460 (with life-460)",
+   "input": {
+    "slot": 1,
+    "base": "stock",
+    "fields": {
+     "life": 460
+    },
+    "force": true
+   },
+   "expected": [
+    "patch=1,EE,10302BF8,extended,000001CC",
+    "patch=1,EE,10302BFA,extended,000001CC"
+   ]
+  },
+  {
+   "name": "JP addresses (inferred): mission 1 demo at 0x300B60",
+   "input": {
+    "slot": 1,
+    "base": "stock",
+    "region": "jp",
+    "fields": {
+     "enemy": "KY",
+     "time": 30,
+     "p.life": 210
+    }
+   },
+   "expected": [
+    "patch=1,EE,10300B62,extended,00000002",
+    "patch=1,EE,10300B78,extended,000000D2",
+    "patch=1,EE,10300BB6,extended,0000001E"
+   ]
+  },
+  {
+   "name": "slot out of range",
+   "input": {
+    "slot": 31
+   },
+   "error": "slot must be 1-30"
+  },
+  {
+   "name": "unknown field",
+   "input": {
+    "slot": 1,
+    "fields": {
+     "p.hp": 5
+    }
+   },
+   "error": "unknown field"
+  },
+  {
+   "name": "life out of range without force",
+   "input": {
+    "slot": 1,
+    "fields": {
+     "p.life": 500
+    }
+   },
+   "error": "outside 1..420"
+  },
+  {
+   "name": "enemy 0 is not a character",
+   "input": {
+    "slot": 1,
+    "fields": {
+     "enemy": 0
+    }
+   },
+   "error": "outside 1..25"
+  },
+  {
+   "name": "common field with a side prefix",
+   "input": {
+    "slot": 1,
+    "fields": {
+     "p.time": 30
+    }
+   },
+   "error": "common field"
+  },
+  {
+   "name": "time 0",
+   "input": {
+    "slot": 1,
+    "fields": {
+     "time": 0
+    }
+   },
+   "error": "time 0"
+  },
+  {
+   "name": "text too long",
+   "input": {
+    "slot": 1,
+    "text": {
+     "QUIT": "GIVE UP NOW"
+    }
+   },
+   "error": "longer than"
+  },
+  {
+   "name": "format string is not editable",
+   "input": {
+    "slot": 1,
+    "text": {
+     "OVER %d": "MORE %d"
+    }
+   },
+   "error": "printf format"
+  },
+  {
+   "name": "bad panel word",
+   "input": {
+    "slot": 1,
+    "fields": {
+     "clear": "WIN"
+    }
+   },
+   "error": "is not a number"
+  },
+  {
+   "name": "JP has no text edits",
+   "input": {
+    "slot": 1,
+    "region": "jp",
+    "text": {
+     "QUIT": "NO"
+    }
+   },
+   "error": "US only"
+  }
+ ],
+ "panel_tests": [
+  {
+   "slot": 1,
+   "id": "seal-two",
+   "caption": "Two seals at once: player SPECIAL + JUMP, enemy SPECIAL + GUARD.",
+   "fields": {
+    "p.seal_special": 1,
+    "p.seal_jump": 1,
+    "e.seal_special": 1,
+    "e.seal_guard": 1
+   }
+  },
+  {
+   "slot": 2,
+   "id": "seal-all",
+   "caption": "All three seals (SPECIAL, JUMP, GUARD) on both sides.",
+   "fields": {
+    "seal_special": 1,
+    "seal_jump": 1,
+    "seal_guard": 1
+   }
+  },
+  {
+   "slot": 3,
+   "id": "life-regain-poison",
+   "caption": "Two life effects: player REGAIN + POISON, enemy REGAIN + HEAL.",
+   "fields": {
+    "p.regain": 1,
+    "p.poison": 1,
+    "e.regain": 1,
+    "e.heal": 1
+   }
+  },
+  {
+   "slot": 4,
+   "id": "life-regain-heal",
+   "caption": "Two life effects: player REGAIN + HEAL, enemy REGAIN + POISON.",
+   "fields": {
+    "p.regain": 1,
+    "p.heal": 1,
+    "e.regain": 1,
+    "e.poison": 1
+   }
+  },
+  {
+   "slot": 5,
+   "id": "life-three",
+   "caption": "Three life effects at once: player HEAL + POISON + REGAIN, enemy HEAL + POISON.",
+   "fields": {
+    "p.regain": 1,
+    "p.heal": 1,
+    "p.poison": 1,
+    "e.heal": 1,
+    "e.poison": 1
+   }
+  },
+  {
+   "slot": 6,
+   "id": "enemy-black",
+   "caption": "Enemy colour BLACK (sp 2).",
+   "fields": {
+    "enemy": "KY",
+    "e.sp": "BLACK"
+   }
+  },
+  {
+   "slot": 7,
+   "id": "enemy-gold",
+   "caption": "Enemy colour GOLD (sp 1), for comparison with BLACK.",
+   "fields": {
+    "enemy": "KY",
+    "e.sp": "GOLD"
+   }
+  },
+  {
+   "slot": 8,
+   "id": "enemy-ex-black",
+   "caption": "Enemy EX together with BLACK.",
+   "fields": {
+    "enemy": "KY",
+    "e.ex": 1,
+    "e.sp": "BLACK"
+   }
+  },
+  {
+   "slot": 9,
+   "id": "enemy-ex-gold",
+   "caption": "Enemy EX together with GOLD.",
+   "fields": {
+    "enemy": "ORDER-SOL",
+    "e.ex": 1,
+    "e.sp": "GOLD"
+   }
+  },
+  {
+   "slot": 10,
+   "id": "digit-7",
+   "caption": "The digit 7 in every numeric line: TIME 77, LIFE 377 / 177, TENSION 7000 / 777, GUARD 7 / -7, combo OVER 7 / UNDER 7.",
+   "fields": {
+    "time": 77,
+    "p.life": 377,
+    "e.life": 177,
+    "p.tension": 7000,
+    "e.tension": 777,
+    "p.guard": 7,
+    "e.guard": -7,
+    "p.combo_over": 7,
+    "e.combo_under": 7
+   }
+  },
+  {
+   "slot": 11,
+   "id": "position",
+   "caption": "DAMAGE position: player TO GROUND, enemy TO AIR.",
+   "fields": {
+    "p.position": "TO GROUND",
+    "e.position": "TO AIR"
+   }
+  },
+  {
+   "slot": 12,
+   "id": "burst",
+   "caption": "PSYCH BURST: player INFINITY, enemy none (-).",
+   "fields": {
+    "p.burst": "INFINITY",
+    "e.burst": 0
+   }
+  },
+  {
+   "slot": 13,
+   "id": "instant-kill",
+   "caption": "INSTANT KILL: player OK (no_ik 0), enemy sealed (no_ik 1).",
+   "fields": {
+    "p.no_ik": 0,
+    "e.no_ik": 1
+   }
+  },
+  {
+   "slot": 14,
+   "id": "tension-modes",
+   "caption": "TENSION modes: player NO with 5000, enemy HOLD with 10000.",
+   "fields": {
+    "p.tension_mode": "NO",
+    "p.tension": 5000,
+    "e.tension_mode": "HOLD",
+    "e.tension": 10000
+   }
+  },
+  {
+   "slot": 15,
+   "id": "guard-negative",
+   "caption": "GUARD LEVEL negative: player -128, enemy -1.",
+   "fields": {
+    "p.guard": -128,
+    "e.guard": -1
+   }
+  },
+  {
+   "slot": 16,
+   "id": "damage-lists",
+   "caption": "DAMAGE lists: player normals blocked (lists SPECIAL OVERDRIVE + DEAD ANGLE), enemy specials blocked and Dead Angle off (lists NORMAL OVERDRIVE).",
+   "fields": {
+    "p.no_normal": 1,
+    "e.no_special": 1,
+    "e.dead_angle": 0
+   }
+  },
+  {
+   "slot": 17,
+   "id": "damage-none-all",
+   "caption": "DAMAGE NONE (player: all three blocked, Dead Angle off) and ALL (enemy).",
+   "fields": {
+    "p.no_normal": 1,
+    "p.no_special": 1,
+    "p.no_overdrive": 1,
+    "p.dead_angle": 0
+   }
+  },
+  {
+   "slot": 18,
+   "id": "damage-dead-angle-only",
+   "caption": "DAMAGE: player only OVERDRIVE (normals and specials blocked), enemy only DEAD ANGLE.",
+   "fields": {
+    "p.no_normal": 1,
+    "p.no_special": 1,
+    "e.no_normal": 1,
+    "e.no_special": 1,
+    "e.no_overdrive": 1
+   }
+  },
+  {
+   "slot": 19,
+   "id": "clear-judge-infinity",
+   "caption": "CLEAR JUDGE with TIME INFINITY (-1).",
+   "fields": {
+    "clear": "JUDGE",
+    "time": -1
+   }
+  },
+  {
+   "slot": 20,
+   "id": "clear-timeup-100",
+   "caption": "CLEAR TIME UP with time 100 (does the panel clamp values over 99?).",
+   "fields": {
+    "clear": "TIME UP",
+    "time": 100
+   },
+   "force": true
+  },
+  {
+   "slot": 21,
+   "id": "combo-both",
+   "caption": "COMBO DAMAGE: OVER 3 and UNDER 9 on the player at once; enemy UNDER 1.",
+   "fields": {
+    "p.combo_over": 3,
+    "p.combo_under": 9,
+    "e.combo_under": 1
+   }
+  },
+  {
+   "slot": 22,
+   "id": "kitchen-sink",
+   "caption": "Many effects on the enemy at once: EX GOLD Justice, REGAIN + HEAL + POISON, HOLD tension, seals, burst INFINITY, TO AIR, OVER 12.",
+   "fields": {
+    "enemy": "JUSTICE",
+    "e.ex": 1,
+    "e.sp": "GOLD",
+    "e.regain": 1,
+    "e.heal": 1,
+    "e.poison": 1,
+    "e.tension_mode": "HOLD",
+    "e.tension": 2500,
+    "e.seal_special": 1,
+    "e.seal_jump": 1,
+    "e.burst": "INFINITY",
+    "e.position": "TO AIR",
+    "e.combo_over": 12,
+    "e.guard": 128
+   }
+  },
+  {
+   "slot": 23,
+   "id": "life-extremes",
+   "caption": "LIFE 1 vs 420 with GUARD 128 / -120.",
+   "fields": {
+    "p.life": 1,
+    "e.life": 420,
+    "p.guard": 128,
+    "e.guard": -120
+   }
+  },
+  {
+   "slot": 24,
+   "id": "player-black",
+   "caption": "Player-side EX + BLACK flags (does the panel show them for the player?).",
+   "fields": {
+    "p.ex": 1,
+    "p.sp": "BLACK",
+    "p.regain": 1
+   }
+  },
+  {
+   "slot": 25,
+   "id": "neutral",
+   "caption": "The neutral record (genmission.py defaults) for reference: enemy Sol, 99 s, BEAT ENEMY.",
+   "fields": {}
   }
  ]
 }
