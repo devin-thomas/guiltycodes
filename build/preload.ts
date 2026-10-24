@@ -13,11 +13,25 @@ export type PreloadOptions = {
   readonly partBudget: number;
   readonly inlineBudget: number;
 };
-export type PreloadPage = { readonly url: string; readonly title: string; readonly description: string; readonly text: string };
-export type PreloadPart = { readonly file: string; readonly title: string; readonly pages: readonly PreloadPage[]; readonly text: string };
-export type PreloadResult = { readonly pages: number; readonly parts: number; readonly chars: number };
+export type PreloadPage = {
+  readonly url: string;
+  readonly title: string;
+  readonly description: string;
+  readonly text: string;
+};
+export type PreloadPart = {
+  readonly file: string;
+  readonly title: string;
+  readonly pages: readonly PreloadPage[];
+  readonly text: string;
+};
+export type PreloadResult = {
+  readonly pages: number;
+  readonly parts: number;
+  readonly chars: number;
+};
 
-export const PRELOAD_ROUTE: "/preload-for-agents" = "/preload-for-agents";
+export const PRELOAD_ROUTE: string = "/preload-for-agents";
 
 const ENTITIES: Readonly<Record<string, string>> = {
   amp: "&",
@@ -56,8 +70,15 @@ function stripTags(html: string): string {
   return html.replace(/<[^>]*>/g, "");
 }
 
+// Block tags inside a link or cell separate words ("Guilty Gear</p><p>1998"); inline tags do not.
 function oneLine(html: string): string {
-  return decode(stripTags(html)).replace(/\s+/g, " ").trim();
+  return decode(
+    stripTags(
+      html.replace(/<\/?(p|div|h[1-6]|li|ul|ol|section|article|header|footer|figure|figcaption|br|tr|td|th|b|strong|small)\b[^>]*>/gi, " "),
+    ),
+  )
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 function absolute(href: string, origin: string, page: string): string {
@@ -87,8 +108,9 @@ function table(html: string): string {
   function line(r: string[]): string {
     return `| ${Array.from({ length: width }, (_: unknown, i: number): string => r[i] ?? "").join(" | ")} |`;
   }
-  let [head, ...body] = rows;
-  return `\n\n${[line(head ?? []), `|${" --- |".repeat(width)}`, ...body.map(line)].join("\n")}\n\n`;
+  let head: string[] = rows[0] ?? [];
+  let body: string[][] = rows.slice(1);
+  return `\n\n${[line(head), `|${" --- |".repeat(width)}`, ...body.map(line)].join("\n")}\n\n`;
 }
 
 // Converts the HTML our static renderers emit (headings, prose, lists, tables, code) into Markdown-style text.
@@ -145,6 +167,8 @@ export function htmlToText(html: string, origin: string, page: string): string {
       /<\/?(p|div|section|article|aside|header|footer|nav|figure|figcaption|details|ul|ol|dl|dt|dd|main|blockquote|form)\b[^>]*>/gi,
       "\n\n",
     );
+  // Adjacent links ("[A](a)[B](b)") read as one run of text without a separator.
+  s = s.replace(/(\u0000\d+\u0000)(?=\u0000\d+\u0000)/g, (held: string): string => `${held} `);
   s = decode(stripTags(s));
   s = s
     .split("\n")
