@@ -31,6 +31,14 @@ for (const b of site.shared.priorWork.matchAll(/^- (.+(?:\n  .+)*)/gm)) {
   for (const n of text.matchAll(/\*\*([^*]+)\*\*/g)) site.priorMap.set(n[1], text);
 }
 
+// Mission Editor (AC+ US): data from data/mission-editor.json (tools/mission-data.py); screenshots from src/mission-shots
+// (tools/mission-shots.py, gitignored, so the page shows empty frames when they are absent).
+const missionData = JSON.parse(fs.readFileSync("data/mission-editor.json", "utf8"));
+const SHOTS = path.resolve("src/mission-shots");
+const hasShots = fs.existsSync(SHOTS);
+const missionCtx = { shots: hasShots, ui: hasShots && fs.existsSync(path.join(SHOTS, "ui.json")) ? JSON.parse(fs.readFileSync(path.join(SHOTS, "ui.json"), "utf8")) : [] };
+for (const r of site.releases) r.hasMissionEditor = r.serial === "SLUS-21847";
+
 // ---- pages ----
 put("/", R.homePage(site));
 put("/games/", R.gamesIndex(site));
@@ -50,6 +58,7 @@ for (const g of site.games) {
     put(`${r.url}faq/`, R.faqPage(r, site));
     put(`${r.url}tests/`, R.testsPage(r, site));
     if (r.hasLee4) put(`${r.url}prior-art/`, R.lee4Page(r, site));
+    if (r.hasMissionEditor) put(`${r.url}mission-editor/`, R.missionPage(r, site, missionCtx));
     const sorted = [...r.codes].sort((a, b) => GROUP_ORDER.indexOf(a.group) - GROUP_ORDER.indexOf(b.group));
     sorted.forEach((c, i) => {
       put(c.url, R.codePage(c, site, { prev: sorted[i - 1], next: sorted[i + 1] }));
@@ -83,6 +92,14 @@ const A = path.join(DIST, "assets");
 fs.mkdirSync(A, { recursive: true });
 fs.copyFileSync("src/site.css", path.join(A, "site.css"));
 fs.copyFileSync("src/site.js", path.join(A, "site.js"));
+fs.copyFileSync("src/mission-data.js", path.join(A, "mission-data.js"));
+fs.copyFileSync("src/mission-editor.js", path.join(A, "mission-editor.js"));
+fs.writeFileSync(path.join(A, "mission-stock.js"), `window.MISSION_RAW=${JSON.stringify({ STOCK: missionData.stock, FIELDS: missionData.fields })};
+`);
+if (hasShots) {
+  fs.mkdirSync(path.join(A, "missions"), { recursive: true });
+  fs.cpSync(SHOTS, path.join(A, "missions"), { recursive: true });
+}
 fs.copyFileSync("src/uppercut-labs-logo.png", path.join(A, "uppercut-labs-logo.png"));
 fs.copyFileSync("node_modules/@fontsource/anton/files/anton-latin-400-normal.woff2", path.join(A, "anton-latin-400-normal.woff2"));
 await esbuild({ entryPoints: ["src/bg.js"], bundle: true, format: "esm", minify: true, outfile: path.join(A, "bg.js"), logLevel: "warning", legalComments: "none" });

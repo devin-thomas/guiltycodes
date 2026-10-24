@@ -3,6 +3,7 @@ import { esc, md, mdInline, tableToMd, stripMd, slugify, section, between, clean
 import { STATUS_ORDER } from "./data.mjs";
 import { siGithub, siX } from "simple-icons";
 
+export const MISSION_URL = "/games/guilty-gear-xx-accent-core-plus/us-slus-21847/mission-editor/";
 const cls = (s) => s.toLowerCase().replace(/\s+/g, "-");
 export const badge = (s) => `<span class="st st-${cls(s)}">${esc(s)}</span>`;
 
@@ -40,7 +41,7 @@ const icon = (i) => `<svg class="mark" viewBox="0 0 24 24" width="20" height="20
 // ---------- page shell ----------
 const LOGO = `<svg class="logo" viewBox="0 0 400 66" role="img" aria-label="Guilty Codes"><defs><linearGradient id="lg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff"/><stop offset=".48" stop-color="#ffd9d9"/><stop offset=".5" stop-color="#ff2b3d"/><stop offset="1" stop-color="#6a0610"/></linearGradient></defs><g transform="skewX(-12) translate(18 0)"><text x="0" y="52" font-family="Anton,Impact,'Arial Narrow',sans-serif" font-size="56" letter-spacing="2" fill="url(#lg)" stroke="#000" stroke-width="7" paint-order="stroke" stroke-linejoin="round">GUILTY CODES</text></g><path d="M6 61 L392 14" stroke="#e6b43c" stroke-width="2.5" opacity=".9"/><path d="M6 64 L392 17" stroke="#000" stroke-width="1" opacity=".7"/></svg>`;
 
-export function shell({ title, desc, path, site, crumbs = [], body, wide = false }) {
+export function shell({ title, desc, path, site, crumbs = [], body, wide = false, scripts = [] }) {
   const games = site.games;
   const cur = crumbs.find((c) => c.game)?.game;
   const side = games
@@ -81,6 +82,7 @@ export function shell({ title, desc, path, site, crumbs = [], body, wide = false
 <aside class="side">
   <details class="box sidebox" open><summary><span>Games</span></summary><ul class="gamelist">${side}</ul></details>
   <div class="box sidebox sitebox"><h2><span>Site</span></h2><ul><li><a href="/how-to/">How to use</a></li><li><a href="/credits/">Credits</a></li><li><a href="/search/">Search</a></li></ul></div>
+  <div class="box sidebox sitebox"><h2><span>Tools</span></h2><ul><li><a href="${MISSION_URL}">Mission Editor <span class="st st-beta">Beta</span></a></li></ul></div>
   <div class="badges">${badges()}</div>
 </aside>
 <main id="main">
@@ -101,7 +103,8 @@ ${body}
   <p>Built ${esc(site.built)}. <button type="button" id="bgtoggle" class="linkbtn" aria-pressed="true">Background: on</button></p>
 </footer>
 </div>
-<script src="/assets/site.js" defer></script>
+<script src="/assets/site.js" defer></script>${scripts.map((u) => `
+<script src="${u}" defer></script>`).join("")}
 </body>
 </html>`;
 }
@@ -121,6 +124,7 @@ function tabs(r, active) {
     ["tests/", "Test log"],
   ];
   if (r.hasLee4) t.push(["prior-art/", "lee4"]);
+  if (r.hasMissionEditor) t.push(["mission-editor/", `Mission Editor <span class="st st-beta">Beta</span>`]);
   return `<nav class="tabs" aria-label="${esc(r.game.title)} ${esc(r.label)}"><ul>${t
     .filter(([p]) => !(p === "sheet/" && !r.codes.length))
     .map(([p, l]) => `<li${active === p ? ' class="on"' : ""}><a href="${r.url}${p}"${active === p ? ' aria-current="page"' : ""}>${l}</a></li>`)
@@ -479,4 +483,65 @@ export function searchPage(site) {
 export function notFoundPage(site) {
   const body = `${pageTitle("Page not found")}<p>Try the <a href="/games/">games list</a> or <a href="/search/">search</a>.</p>`;
   return shell({ title: "Page not found | Guilty Codes", desc: "Page not found.", site, body });
+}
+
+// ----- Mission Editor (AC+ US, preview) -----
+// The form itself is built in the browser by assets/mission-editor.js from window.MISSION_DATA. This is the page frame.
+// ctx: { shots: bool (the converted screenshots exist), ui: [{file,title}] from the capture library }
+export function missionPage(r, site, ctx) {
+  const fig = (src, cap, alt) =>
+    `<figure class="shot"><a href="/assets/missions/${src}" target="_blank" rel="noopener"><img src="/assets/missions/${src}" width="640" height="448" alt="${esc(alt)}" loading="lazy"></a><figcaption>${cap}</figcaption></figure>`;
+  const frame = ctx.shots ? "" : ` data-noshots="1"`;
+  const proof = ctx.shots
+    ? box(
+        "Proof: the Mission 1 demo",
+        `<p>The first tested edit, <code>SLUS-21847_F233A433.mission1-demo</code>: Mission 1's enemy Axl becomes Ky, the time 99 becomes 30, and your start life 420 becomes 210. The info screen and the fight both follow the change. Load it from the examples above.</p>
+<div class="two">${fig("demo-info.webp", "The Mission 1 info screen with the patch on: TIME 30, ENEMY KY, LIFE 210.", "PS2 Accent Core Plus Mission 1 info screen showing TIME 30, ENEMY KY, LIFE 210")}${fig("demo-fight.webp", "The fight it starts: Sol against Ky, timer 30.", "PS2 Accent Core Plus Mission 1 fight, Sol against Ky, timer at 30")}</div>`,
+        "proof",
+      )
+    : "";
+  const ui = ctx.ui?.length
+    ? box("Finding Mission mode", `<div class="shots">${ctx.ui.map((u) => fig(`ui/${u.file}`, esc(u.title), `PS2 Accent Core Plus: ${u.title}`)).join("")}</div>`, "where")
+    : "";
+  const body = `${relHeader(r, "mission-editor/")}
+<div class="warn"><b>Beta.</b> The field layout and the stock values are read from the game, and three edits are tested: Mission 1's enemy, time and your start life. Stage and music names and the allowed ranges are not checked yet, so some values may do nothing or break a fight. Keep a memory card backup and treat every code on this page as <span class="st st-inferred">INFERRED</span> unless the field table says VERIFIED.</div>
+<noscript><div class="warn danger">The editor needs JavaScript. The finished codes for this release are on the <a href="${r.url}">Codes</a> tab.</div></noscript>
+<div id="med"${frame}>
+${box(
+  "Mission Editor",
+  `<p class="lead">Rebuild any of the 30 Mission mode slots, then copy the cheat file. Pick a slot, change the rules and either fighter, and the code below lists only the values that differ from the stock mission.</p>
+<p>US disc only (${esc(r.serial)}, CRC <code>${esc(r.crc)}</code>). Each mission is one record of 30 in the game's data, so the codes need no other cheat and work in PCSX2 only; real cheat devices are <span class="st st-not-tested">NOT TESTED</span>.</p>`,
+)}
+${box("1. Pick a mission", `<div class="slots" id="slots" role="group" aria-label="Mission slots"></div>
+<div class="msn"><div id="msfig"></div><div id="msread"></div></div>`, "pick")}
+${box("2. Rules", `<div id="rulebody"></div>`, "rules")}
+${box("3. Fighters", `<div class="tablewrap"><table class="grid edit" id="ftable"><thead><tr><th>Field</th><th>You</th><th>Opponent</th><th class="hide-sm">Status</th></tr></thead><tbody></tbody></table></div>`, "fighters")}
+${box(
+  "4. Your code",
+  `<div class="boxcopy"><button class="copy" type="button" data-target="pn">Copy</button><pre class="code" id="pn" tabindex="0" aria-live="polite"></pre></div>
+<p class="dl"><a class="dlbtn" id="pndl" href="#" download="${esc(r.serial)}_${esc(r.crc)}.pnach">Download ${esc(r.serial)}_${esc(r.crc)}.pnach</a> <span class="shown" id="pnmeta"></span> <button type="button" id="clearall">Clear all changes</button></p>
+<div class="prose"><h3>Use it in PCSX2</h3><ol><li>Open PCSX2's <code>cheats</code> folder. If <code>${esc(r.serial)}_${esc(r.crc)}.pnach</code> is already there (the <a href="/downloads/">Downloads</a> file), paste these sections at the end of it. Otherwise save the download under that name.</li><li>Turn cheats on and tick the <code>Mission</code> cheats you want (see <a href="/how-to/">How to use</a>), then boot the disc.</li><li>Open Mission mode and pick the slot you edited. The info screen shows the new values before you start.</li></ol></div>`,
+  "code",
+)}
+${box(
+  "Examples",
+  `<div class="tablewrap"><table class="grid" id="extable"><thead><tr><th>Example</th><th class="num">Mission</th><th>Status</th><th></th></tr></thead><tbody></tbody></table></div>`,
+  "examples",
+)}
+${proof}${ui}
+<details class="box" id="fieldstatus"><summary><span>Field table</span></summary><div class="boxin"><p>What each field does and how far it is checked. Statuses follow the <a href="/">site key</a>: VERIFIED was seen in a test run, INFERRED shares the mechanism of a verified field, NOT TESTED was not run.</p><div class="tablewrap"><table class="grid" id="fieldtable"><thead><tr><th>Field</th><th>What it does</th><th class="num">Offset</th><th>Status</th></tr></thead><tbody></tbody></table></div></div></details>
+${box(
+  "About this page",
+  `<p>Mission records are 30 blocks of 0x80 bytes in the game's data at <code>0x302BE0</code>, every field a signed 16-bit value. The stock values are decoded from the US disc and match the game's own info screen for Missions 1 to 25. Slots 26 to 30 appear in the game only after Missions 1 to 25 are cleared, so their stock values are decoded but not photographed.</p>
+<p>Screenshots are PS2 captures of the unmodified US disc, taken in PCSX2.</p>`,
+)}
+</div>`;
+  return shell({
+    title: `Mission Editor (beta) | ${r.game.title} ${r.label} | Guilty Codes`,
+    desc: `Edit the 30 Mission mode slots of ${r.game.title} (${r.serial}) and get a PCSX2 .pnach file. Preview.`,
+    site,
+    body,
+    scripts: ["/assets/mission-stock.js", "/assets/mission-data.js", "/assets/mission-editor.js"],
+    crumbs: [{ label: "Games", href: "/games/" }, { label: r.game.title, href: `/games/${r.game.slug}/`, game: r.game.id }, { label: r.label, href: r.url }, { label: "Mission Editor" }],
+  });
 }

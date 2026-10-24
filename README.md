@@ -71,6 +71,15 @@ Guilty Gear XX's menus and HUD set the colours (black, crimson, steel grey, gold
 
 Uppercut Labs logo (the original brand image), downscaled from 1254 to 128 px with Lanczos and nothing else (`src/uppercut-labs-logo.png`; no rounding, masks or cropping). The GitHub and X marks are the official icons from `simple-icons`, read at build time. Links: uppercut-labs.com, github.com/devin-thomas, x.com/gohan__fgc.
 
+## Mission Editor (beta)
+
+A tab on the Accent Core Plus US release (`/games/guilty-gear-xx-accent-core-plus/us-slus-21847/mission-editor/`, also linked from the sidebar). It edits the 30 Mission mode slots and writes a PCSX2 `.pnach`. Marked Beta because the field layout and stock values are read from the game and three edits are tested (Mission 1 enemy, time and your start life); stage and music names and the value limits are stubs.
+
+- `data/mission-editor.json` is the stock data (30 records, 35 fields). Regenerate it with `python tools/mission-data.py --src <games/ggacplus-missions checkout>`; it reads `FIELDS` from `tools/missions.py` and `data/missions_us.csv` there. The build only reads the JSON.
+- `src/mission-data.js` is the replaceable data layer (`window.MISSION_DATA`: STOCK, FIELDS, CHARS, STAGES, BGMS, LIMITS, EXAMPLES, `encode()`). `encode()` is unchanged from the first editor. `src/mission-editor.js` is the form. The build writes `assets/mission-stock.js` from the JSON.
+- `node tools/check-mission-encoder.mjs <mission1-demo.pnach>` checks the built encoder against the tested file.
+- Screenshots are PS2 captures of the US disc and are **not committed**. `python tools/mission-shots.py` converts them from `E:/holding bay/retro-graphics-research/captures` (`GC_CAPTURES` or `--src` to override) into `src/mission-shots/` (gitignored); the build copies that folder to `assets/missions/` when it exists, and the page shows empty frames when it does not. Sources: `ggacplus-missions/ms-info-stock-no01..25.png`, `ms-m1-patch-a1-info.png`, `ms-m1-patch-c1-fight.png`, and, when it exists, `ggacplus-missions/ui-library/manifest.json`. Missions 26 to 30 have no capture: the stock selector wraps to No. 1 to 5. `captures/acplusr-footage` is the PC +R release and is never used.
+
 ## Layout
 
 ```
@@ -78,5 +87,7 @@ build.mjs          orchestrates the build, writes dist/
 build/lib.mjs      markdown slicing, table parsing, pnach parsing, scrubbing
 build/data.mjs     reads the repo docs into games > releases > codes
 build/render.mjs   HTML templates
-src/               site.css, site.js, bg.js
+src/               site.css, site.js, bg.js, mission-data.js, mission-editor.js
+data/              mission-editor.json (stock Mission records)
+tools/             mission-data.py, mission-shots.py, check-mission-encoder.mjs
 ```
